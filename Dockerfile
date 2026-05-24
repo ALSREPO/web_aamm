@@ -18,8 +18,8 @@ COPY requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-# 6. Copiamos el resto del código del proyecto al contenedor
-COPY ./src /app/src
+# 6. CORREGIDO: Copiamos TODO el contenido de la raíz del proyecto al contenedor
+COPY . /app/
 
 # 7. Exponemos el puerto predeterminado
 EXPOSE 8888
