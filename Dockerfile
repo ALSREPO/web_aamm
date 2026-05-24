@@ -25,4 +25,4 @@ COPY ./src /app/src
 EXPOSE 8888
 
 # 8. Comando por defecto para producción (sin recarga en vivo)
-CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8888"]
+CMD ["sh", "-c", "python /app/database/init_db.py && uvicorn src.main:app --host 0.0.0.0 --port 8888"]
