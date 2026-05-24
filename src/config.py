@@ -20,3 +20,6 @@ db_config_editor = {
     "database": os.environ.get("DB_NAME", "database_defecto"),
     "port": int(os.environ.get("DB_PORT", 3306)),
 }
+
+# 2. Configuración del nivel de logs (Dinámica)
+LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
