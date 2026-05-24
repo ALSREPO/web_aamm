@@ -1,23 +1,23 @@
 import logging
 import os
 import sys
+from sqlalchemy import text
 
-# Importamos la configuración del LOG_LEVEL
+# 1. Forzamos a Python a mirar en la raíz del proyecto para encontrar 'src'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+# 2. Ahora sí, importamos de forma segura
 from src.config import LOG_LEVEL
+from src.utils.db_tools import get_engine
 
-# Configurar el sistema de logs global
+# 3. Configuramos el logger para este script
 logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     datefmt="%Y-%m-%d %H:%M:%S"
 )
-logger = logging.getLogger("AAMM-BBDD-INIT")
+logger = logging.getLogger("DB-INIT")
 
-# Aseguramos que Python encuentre el módulo 'src' al ejecutar desde la raíz
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-from sqlalchemy import text
-from src.utils.db_tools import get_engine
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "scripts")
 
