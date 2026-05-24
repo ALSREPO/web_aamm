@@ -1,26 +1,41 @@
+import logging
 from fastapi import FastAPI
 from fastapi.responses import HTMLResponse
 from sqlalchemy import text  # <-- CORREGIDO: Faltaba esta importación
 
-print('HOLA')
+# Importamos la configuración del LOG_LEVEL
+from src.config import LOG_LEVEL
+
+# Configurar el sistema de logs global
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S"
+)
+logger = logging.getLogger("AAMM-APP")
+
+logger.info('Iniciando la aplicación web de Artes Marciales')
 
 # Forzamos el import limpio según la estructura de tu proyecto
 from src.utils.db_tools import fetch_test_rows, get_engine
-print('ENTRA 1')
 
 engine = get_engine()
-print(f'engine :  {engine}')
+logger.debug(f'engine :  {engine}')
 
-with engine.connect() as connection:
-    query = text("SELECT * FROM test")
-    resultado = connection.execute(query)
-    filas = resultado.fetchall()
-    if not filas:
-        print("Conexión exitosa, pero la tabla 'test' está vacía.")
-    else:
-        print(f"¡Éxito! Se encontraron {len(filas)} filas:")
-        for fila in filas:
-            print(fila)
+try:
+    with engine.connect() as connection:
+        query = text("SELECT * FROM test")
+        resultado = connection.execute(query)
+        filas = resultado.fetchall()
+        if not filas:
+            logger.warning("Conexión exitosa, pero la tabla 'test' está vacía.")
+        else:
+            logger.info(f"¡Éxito! Se encontraron {len(filas)} filas.")
+            for fila in filas:
+                logger.debug(fila)
+except Exception as e:
+    logger.error(f"Error crítico al conectar a la base de datos durante el arranque: {e}")
+
 
 app = FastAPI(title="AAMM - Artes Marciales")
 
