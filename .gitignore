@@ -1,0 +1,23 @@
+# Datos sensibles
+.env
+
+# Basura de Python
+__pycache__/
+*.pyc
+
+# Archivos temporales o generados
+static/
+log/
+*.log
+*.old
+notas.txt
+
+# Entornos virtuales
+venv/
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db
+
+# Archivos de BBDD
+database/db_init_config.sql
