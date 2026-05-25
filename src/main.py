@@ -3,7 +3,6 @@ from fastapi import FastAPI
 
 from src.utils.db_tools import engine_read_only, engine_write, get_read_db
 from src.models import models
-from src.routers import usuarios
 
 # Creamos las tablas si no existen (aunque ya las tengas, esto asegura sincronización)
 models.Base.metadata.create_all(bind=engine_read_only)
@@ -28,6 +27,12 @@ logger.info('Iniciando la aplicación web de Artes Marciales')
 app = FastAPI(title="AAMM - Artes Marciales")
 
 
+###########################################################
+# Cargamos los routers
+from src.routers import login
+app.include_router(login.router)
+
+from src.routers import usuarios
 app.include_router(usuarios.router)
 
 
