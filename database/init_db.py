@@ -8,7 +8,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # 2. Ahora sí, importamos de forma segura
 from src.config import LOG_LEVEL
-from src.utils.db_tools import get_engine
+from src.utils.db_tools import engine_write
 
 # 3. Configuramos el logger para este script
 logging.basicConfig(
@@ -18,17 +18,13 @@ logging.basicConfig(
 )
 logger = logging.getLogger("DB-INIT")
 
-
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "scripts")
 
 
 def inicializar_base_de_datos():
-    # Usamos los permisos de escritura/editor para aplicar cambios estructurales
-    engine = get_engine(permisos="escritura")
-
     logger.info("--- [DB INIT] Iniciando comprobación de la Base de Datos ---")
 
-    with engine.connect() as connection:
+    with engine_write.connect() as connection:
         # 1. Creamos la tabla de historial de migraciones si no existe
         connection.execute(
             text(
@@ -66,7 +62,7 @@ def inicializar_base_de_datos():
                 sql_content = f.read()
 
             # Ejecutar el contenido del archivo SQL
-            # Nota: Si el archivo tiene múltiples sentencias separadas por ';', 
+            # Nota: Si el archivo tiene múltiples sentencias separadas por ';',
             # las dividimos para ejecutarlas limpiamente.
             statements = sql_content.split(";")
             for statement in statements:
