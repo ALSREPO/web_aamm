@@ -1,6 +1,9 @@
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, Request, status
+from fastapi.responses import RedirectResponse
 
+
+from src.utils import auth
 from src.utils.db_tools import engine_read_only, engine_write, get_read_db
 from src.models import models
 
@@ -34,6 +37,9 @@ app.include_router(login.router)
 
 from src.routers import usuarios
 app.include_router(usuarios.router)
+
+from src.routers import frontEnd
+app.include_router(frontEnd.router)
 
 
 if __name__ == "__main__":
