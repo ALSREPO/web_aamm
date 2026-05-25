@@ -22,4 +22,11 @@ def login(response: Response, usuario: autenticacion.UsuarioLogin, db: Session =
             detail="Usuario o contraseña incorrectos."
         )
     
+    # 4. Validar si el Email está Verificado ---
+    if not db_user.email_verificado:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Debes verificar tu correo electrónico antes de acceder. Revisa tu bandeja de entrada."
+        )
+    
     return {"message": "Login exitoso", "redirect": "/"}
