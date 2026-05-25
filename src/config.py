@@ -23,3 +23,8 @@ db_config_editor = {
 
 # 2. Configuración del nivel de logs (Dinámica)
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+
+# 3. Configuración del token (JWT)
+SECRET_KEY = os.environ.get("SECRET_KEY")
+ALGORITHM = os.environ.get("ALGORITHM", "HS256")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
