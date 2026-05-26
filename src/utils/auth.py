@@ -3,8 +3,8 @@ from src.config import SECRET_KEY, ALGORITHM
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from src.models import models
-from fastapi import Depends, Request
+from src.models.models import Usuario
+from fastapi import Depends, Request, HTTPException, status
 from sqlalchemy.orm import Session
 from src.utils.db_tools import get_read_db
 
@@ -75,7 +75,15 @@ async def obtener_usuario_actual(request: Request, db: Session = Depends(get_rea
     if not email:
         return None
         
-    user = db.query(models.Usuario).filter(models.Usuario.email == email).first()
+    user = db.query(Usuario).filter(Usuario.email == email).first()
     if not user or user.activo < 1:
         return None
     return user 
+
+async def verificar_admin(user: Usuario = Depends(obtener_usuario_actual)):
+    if not user or user.activo < 2:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Se requieren permisos de administrador"
+        )
+    return user

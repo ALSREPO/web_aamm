@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from sqlalchemy.orm import Session
 from datetime import date
 from src.utils.db_tools import get_read_db, get_write_db
-from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, obtener_password_hash, enviar_correo_verificacion
+from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin
 from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 
@@ -18,7 +18,7 @@ logger = logging.getLogger("AAMM-APP-login")
 # /login 
 # /logout
 # /registro
-
+# /usuarios/{idusuario}/activar
 
 @router.post("/login")
 def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_read_db)):
@@ -111,3 +111,18 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
         logger.warning("Aviso: El correo no se pudo enviar")
 
     return {"message": "Si los datos son correctos, recibirás un correo para verificar tu cuenta."}
+
+
+
+# pendiente verificar mail
+
+@router.patch("/usuarios/{idusuario}/activar", dependencies=[Depends(verificar_admin)])
+def activar_usuario(idusuario: int, estado: int, db: Session = Depends(get_write_db)):
+    # Aquí buscaremos al usuario por ID y cambiaremos su campo activo a 1 o 2
+    user = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    user.activo = estado
+    db.commit()
+    return {"msg": f"Usuario actualizado a nivel {estado}"}
