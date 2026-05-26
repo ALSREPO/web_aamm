@@ -161,13 +161,12 @@ async def verificar_admin(user: Usuario = Depends(obtener_usuario_actual)):
     return user
 
 
-# Esta función protegerá las rutas privadas, del acceso por API (docs)
-async def usuario_obligatorio(request: Request, db: Session = Depends(get_read_db)):
-    user = await obtener_usuario_actual(request, db)
-    if not user:
-        logger.warning(f"Intento de acceso no autorizado a ruta privada por parte de {request.client.host if request.client else 'usuario desconocido'}")
+async def usuario_obligatorio(user: Usuario = Depends(obtener_usuario_actual)):
+    if not user or user.activo < 1:
+        logger.warning(f"Intento de acceso no autorizado por parte de {user.email if user else 'usuario desconocido'}")
         raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Debes estar logueado para acceder a la API"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acceso denegado: Se requiere estar logueado"
         )
     return user
+

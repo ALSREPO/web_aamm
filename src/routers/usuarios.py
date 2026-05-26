@@ -14,7 +14,7 @@ logger = logging.getLogger("AAMM-APP-usuarios")
 # /listado-completo
 # /cambiar-estatus/{idusuario}
 
-@router.get("/listado-completo")
+@router.get("/listado-completo", dependencies=[Depends(verificar_admin)])
 def listar_usuarios(db: Session = Depends(get_read_db)):
     return db.query(Usuario).all()
 
