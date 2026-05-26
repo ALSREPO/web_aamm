@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
+from fastapi.responses import HTMLResponse
+
 from sqlalchemy.orm import Session
 from datetime import date
 from src.utils.db_tools import get_read_db, get_write_db
-from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin
+from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, verificar_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin
 from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 
@@ -119,7 +121,47 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
 
 
 
-# pendiente verificar mail
+@router_raiz.get("/verificar_mail", response_class=HTMLResponse)
+def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db)):
+    # 1. Decodificar el token para obtener el email
+    email = verificar_token_verificacion(token)
+    
+    if not email:
+        return """
+        <html>
+            <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+                <h1 style="color: #ef4444;">⚠️ Enlace inválido o caducado</h1>
+                <p>El enlace de verificación no es válido o ha expirado (24h). Por favor, intenta registrarte de nuevo.</p>
+                <a href="/registro">Volver al registro</a>
+            </body>
+        </html>
+        """
+
+    # 2. Buscar al usuario en la BBDD
+    usuario = db.query(Usuario).filter(Usuario.email == email).first()
+    
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    # 3. Actualizar el estado
+    if usuario.email_verificado:
+        mensaje = "Tu cuenta ya había sido verificada anteriormente."
+    else:
+        usuario.email_verificado = True
+        db.commit()
+        mensaje = "¡Gracias! Tu correo ha sido verificado correctamente."
+
+    # 4. Respuesta visual para el usuario
+    return f"""
+    <html>
+        <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
+            <h1 style="color: #10b981;">✅ {mensaje}</h1>
+            <p>Ahora un administrador debe activar tu cuenta manualmente para que puedas acceder.</p>
+            <br>
+            <a href="/login" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Ir al Login</a>
+        </body>
+    </html>
+    """
 
 @router.patch("/usuarios/{idusuario}/activar", dependencies=[Depends(verificar_admin)])
 def activar_usuario(idusuario: int, estado: int, db: Session = Depends(get_write_db)):

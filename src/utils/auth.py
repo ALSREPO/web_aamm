@@ -62,22 +62,40 @@ def crear_token_verificacion(email: str):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
+def verificar_token_verificacion(token: str):
+    # O simplemente usa las excepciones de jose.jwt directamente:
+
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        
+        # Verificamos que el propósito del token sea el correcto
+        if payload.get("purpose") != "email_verification":
+            return None
+            
+        return payload.get("sub") # Retorna el email
+
+    except jwt.ExpiredSignatureError:
+        return None # Token caducado
+        
+    except jwt.JWTError: 
+        return None # Token inválido, firma falsa o manipulada
+
+
 def enviar_correo_verificacion(email_destino: str, token: str):
     import smtplib
     from email.mime.text import MIMEText
     from email.mime.multipart import MIMEMultipart
 
-    # 1. Configuración de credenciales (Sustituye por tus variables o strings)
-    # Recomiendo guardar BREVO_SMTP_PASSWORD en tus variables de entorno (.env)
-    smtp_server = SMTP_SERVER  # smtp-relay.brevo.com
-    smtp_port = SMTP_PORT      # 587
-    smtp_usuario = SMTP_USERNAME  # Tu login de Brevo
-    smtp_password = SMTP_PASSWORD   # La contraseña SMTP que generaste
+    # 1. Configuración de credenciales de correo
+    smtp_server     = SMTP_SERVER     # smtp-relay.brevo.com
+    smtp_port       = SMTP_PORT       # 587
+    smtp_usuario    = SMTP_USERNAME   # Tu login de Brevo
+    smtp_password   = SMTP_PASSWORD   # La contraseña SMTP que generaste
     
-    emisor = EMAIL_EMISOR  # no-reply@alsdev.com
-    base_url = BASE_URL    # Ejemplo: https://midominio.com
+    emisor          = EMAIL_EMISOR    # no-reply@alsdev.com
+    base_url        = BASE_URL        # Ejemplo: https://midominio.com
 
-    enlace = f"{base_url}/api/autenticacion/verificar?token={token}"
+    enlace = f"{base_url}/verificar_mail?token={token}"
 
     # 2. Creación del mensaje estructurado
     mensaje = MIMEMultipart("alternative")
