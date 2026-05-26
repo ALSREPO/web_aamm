@@ -1,3 +1,5 @@
+import logging
+
 from passlib.context import CryptContext
 from src.config import SECRET_KEY, ALGORITHM, EMAIL_EMISOR, BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
 from datetime import datetime, timedelta
@@ -7,12 +9,15 @@ from src.models.models import Usuario
 from fastapi import Depends, Request, HTTPException, status
 from sqlalchemy.orm import Session
 from src.utils.db_tools import get_read_db
-
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 # Configuración de Passlib para usar SHA-512
 # 'crypt_dist' asegura que usemos implementaciones seguras
 pwd_context = CryptContext(schemes=["sha512_crypt"], deprecated="auto")
 
+logger = logging.getLogger("AAMM-APP-auth")
 
 
 def verificar_password(plain_password, hashed_password):
@@ -82,10 +87,6 @@ def verificar_token_verificacion(token: str):
 
 
 def enviar_correo_verificacion(email_destino: str, token: str):
-    import smtplib
-    from email.mime.text import MIMEText
-    from email.mime.multipart import MIMEMultipart
-
     # 1. Configuración de credenciales de correo
     smtp_server     = SMTP_SERVER     # smtp-relay.brevo.com
     smtp_port       = SMTP_PORT       # 587
@@ -131,7 +132,7 @@ def enviar_correo_verificacion(email_destino: str, token: str):
         server.quit()
         return True
     except Exception as e:
-        print(f"Error enviando correo a través de Brevo SMTP: {e}")
+        logger.error(f"Error enviando correo a través de Brevo SMTP - {email_destino}: {e}")
         return False
 
 
@@ -152,8 +153,21 @@ async def obtener_usuario_actual(request: Request, db: Session = Depends(get_rea
 
 async def verificar_admin(user: Usuario = Depends(obtener_usuario_actual)):
     if not user or user.activo < 2:
+        logger.warning(f"Intento de acceso no autorizado a ruta admin por parte de {user.email if user else 'usuario desconocido'}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Acceso denegado: Se requieren permisos de administrador"
+        )
+    return user
+
+
+# Esta función protegerá las rutas privadas, del acceso por API (docs)
+async def usuario_obligatorio(request: Request, db: Session = Depends(get_read_db)):
+    user = await obtener_usuario_actual(request, db)
+    if not user:
+        logger.warning(f"Intento de acceso no autorizado a ruta privada por parte de {request.client.host if request.client else 'usuario desconocido'}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Debes estar logueado para acceder a la API"
         )
     return user
