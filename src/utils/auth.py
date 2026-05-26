@@ -1,5 +1,5 @@
 from passlib.context import CryptContext
-from src.config import SECRET_KEY, ALGORITHM
+from src.config import SECRET_KEY, ALGORITHM, EMAIL_EMISOR, BASE_URL, SMTP_SERVER, SMTP_PORT, SMTP_USERNAME, SMTP_PASSWORD
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
@@ -62,9 +62,61 @@ def crear_token_verificacion(email: str):
     return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
 
 
-# Pendiente de desarrollar el envío de correo
 def enviar_correo_verificacion(email_destino: str, token: str):
-    return True
+    import smtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    # 1. Configuración de credenciales (Sustituye por tus variables o strings)
+    # Recomiendo guardar BREVO_SMTP_PASSWORD en tus variables de entorno (.env)
+    smtp_server = SMTP_SERVER  # smtp-relay.brevo.com
+    smtp_port = SMTP_PORT      # 587
+    smtp_usuario = SMTP_USERNAME  # Tu login de Brevo
+    smtp_password = SMTP_PASSWORD   # La contraseña SMTP que generaste
+    
+    emisor = EMAIL_EMISOR  # no-reply@alsdev.com
+    base_url = BASE_URL    # Ejemplo: https://midominio.com
+
+    enlace = f"{base_url}/api/autenticacion/verificar?token={token}"
+
+    # 2. Creación del mensaje estructurado
+    mensaje = MIMEMultipart("alternative")
+    mensaje["From"] = emisor
+    mensaje["To"] = email_destino
+    mensaje["Subject"] = "Verifica tu cuenta en la web AAMM"
+
+    html_content = f"""
+    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+        <h2 style="color: #333;">¡Bienvenido a la web de Artes Marciales!</h2>
+        <p>Para terminar tu registro, por favor confirma tu dirección de correo electrónico pulsando el siguiente botón:</p>
+        <div style="text-align: center; margin: 30px 0;">
+            <a href="{enlace}" style="background-color: #10b981; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verificar Correo</a>
+        </div>
+        <p style="font-size: 12px; color: #666;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{enlace}</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="font-size: 12px; color: #999;">Este enlace caducará en 24 horas. Si no te has registrado tú, puedes ignorar este correo.</p>
+    </div>
+    """
+    
+    # Acoplamos el contenido HTML al mensaje
+    mensaje.attach(MIMEText(html_content, "html"))
+
+    # 3. Envío seguro a través del servidor SMTP de Brevo
+    try:
+        # Conectamos al servidor usando TLS (Puerto 587)
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.starttls()  # Ciframos la conexión de forma segura
+        server.login(smtp_usuario, smtp_password)
+        
+        # Enviamos el correo
+        server.sendmail(emisor, email_destino, mensaje.as_string())
+        server.quit()
+        return True
+    except Exception as e:
+        print(f"Error enviando correo a través de Brevo SMTP: {e}")
+        return False
+
+
 
 async def obtener_usuario_actual(request: Request, db: Session = Depends(get_read_db)):
     token = obtener_token_de_cookie(request)

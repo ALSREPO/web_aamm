@@ -6,11 +6,16 @@ from src.utils.auth import verificar_password, crear_token_acceso, crear_token_v
 from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 
+# 1. El router para tus rutas normales
 router = APIRouter(
     prefix="/api/autenticacion",
     tags=["autenticación"]
 )
 
+# 2. El router específico para rutas que van en la raíz
+router_raiz = APIRouter(
+    tags=["autenticación"] # Mantenemos el tag para que en el Swagger salgan juntos
+)
 import logging
 logger = logging.getLogger("AAMM-APP-login")
 
