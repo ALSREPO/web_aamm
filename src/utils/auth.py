@@ -19,6 +19,9 @@ def verificar_password(plain_password, hashed_password):
     """Compara la contraseña en plano con el hash de la BBDD"""
     return pwd_context.verify(plain_password, hashed_password)
 
+def obtener_password_hash(password):
+    """Genera el hash SHA-512 de una contraseña"""
+    return pwd_context.hash(password)
 
 def crear_token_acceso(data: dict, expires_delta: Optional[timedelta] = None):
     """Genera un token JWT firmado"""
@@ -52,6 +55,16 @@ def validar_token(token: str):
     except JWTError:
         return None
 
+
+def crear_token_verificacion(email: str):
+    expiracion = datetime.utcnow() + timedelta(hours=24)
+    payload = {"sub": email, "exp": expiracion, "purpose": "email_verification"}
+    return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+
+
+# Pendiente de desarrollar el envío de correo
+def enviar_correo_verificacion(email_destino: str, token: str):
+    return True
 
 async def obtener_usuario_actual(request: Request, db: Session = Depends(get_read_db)):
     token = obtener_token_de_cookie(request)

@@ -5,3 +5,13 @@ from pydantic import BaseModel, EmailStr
 class UsuarioLogin(BaseModel):
     email: EmailStr
     password: str
+
+class UsuarioBase(BaseModel):
+    email: EmailStr
+    nombre: str
+
+class UsuarioCreate(UsuarioBase):
+    password: str
+
+class Mensaje(BaseModel):
+    message: str
