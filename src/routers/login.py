@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from datetime import date
 from src.utils.db_tools import get_read_db, get_write_db
-from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, verificar_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin
+from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, verificar_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin, usuario_obligatorio
 from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 
@@ -34,6 +34,7 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
     
     # 2. Validar existencia y contraseña
     if not db_user or not verificar_password(usuario.password, db_user.password):
+        logger.warning(f"Intento de login fallido para email: {db_user.idusuario if db_user else 'N/A'} - {usuario.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Usuario o contraseña incorrectos."
@@ -41,6 +42,7 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
     
     # 3. Validar si el Email está Verificado ---
     if not db_user.email_verificado:
+        logger.warning(f"Intento de login con email no verificado para {db_user.idusuario} - {db_user.email}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Debes verificar tu correo electrónico antes de acceder. Revisa tu bandeja de entrada."
@@ -48,6 +50,7 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
     
     # 4. Verificar si está activo
     if db_user.activo == 0:
+        logger.warning(f"Intento de login con cuenta inactiva para {db_user.idusuario} - {db_user.email}")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Tu cuenta está verificada, pero un administrador debe activarla manualmente."
@@ -66,6 +69,8 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
         samesite="lax",  # Protección CSRF básica
         secure=False     # Cambiar a True cuando tengas HTTPS/SSL
     )
+
+    logger.info(f"Login exitoso para {db_user.idusuario} - {db_user.email}")
     
     return {"message": "Login exitoso", "redirect": "/"}
 
@@ -85,7 +90,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
     if db_user:
         # Si ya está verificado, no permitimos hacer nada más
         if db_user.email_verificado:
-            logger.debug(f"Intento de registro con email ya verificado: {usuario.email}")
+            logger.debug(f"Intento de registro con email ya verificado: {db_user.idusuario} - {usuario.email}")
             raise HTTPException(status_code=400, detail="El email ya está registrado y verificado")
         
         # Si NO está verificado, actualizamos sus datos (por si cambió el nombre o pass)
@@ -93,7 +98,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
         db_user.password = obtener_password_hash(usuario.password)
         db_user.fechaCreacion = date.today()
         # No hace falta db.add, SQLAlchemy detecta el cambio
-        logger.debug(f"Usuario actualizado: {usuario.email}")
+        logger.debug(f"Usuario actualizado: {db_user.idusuario} - {usuario.email}")
     else:
         # Caso normal: Usuario nuevo
         db_user = Usuario(
@@ -105,7 +110,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
             email_verificado=False
         )
         db.add(db_user)
-        logger.debug(f"Nuevo usuario registrado: {usuario.email}")
+        logger.debug(f"Nuevo usuario registrado: {db_user.idusuario} - {usuario.email}")
 
     db.commit()
     
@@ -115,7 +120,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
 
     if not envio_ok:
         # Opcional: podrías decidir si borrar el usuario o avisar de un error
-        logger.warning("Aviso: El correo no se pudo enviar")
+        logger.warning(f"Aviso: El correo para verificar la cuenta de {db_user.idusuario} - {db_user.email} no se pudo enviar")
 
     return {"message": "Si los datos son correctos, recibirás un correo para verificar tu cuenta."}
 
@@ -127,6 +132,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
     email = verificar_token_verificacion(token)
     
     if not email:
+        logger.warning(f"Intento de verificación de correo con token inválido: {token}")
         return """
         <html>
             <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
@@ -141,14 +147,17 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
     usuario = db.query(Usuario).filter(Usuario.email == email).first()
     
     if not usuario:
+        logger.warning(f"Intento de verificación de correo para email no encontrado: {email}")
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     # 3. Actualizar el estado
     if usuario.email_verificado:
+        logger.debug(f"Intento de verificación de correo para usuario ya verificado: {usuario.idusuario} - {email}")
         mensaje = "Tu cuenta ya había sido verificada anteriormente."
     else:
         usuario.email_verificado = True
         db.commit()
+        logger.info(f"Correo verificado para {usuario.idusuario} - {usuario.email}")
         mensaje = "¡Gracias! Tu correo ha sido verificado correctamente."
 
     # 4. Respuesta visual para el usuario
@@ -164,7 +173,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
     """
 
 @router.patch("/usuarios/{idusuario}/activar", dependencies=[Depends(verificar_admin)])
-def activar_usuario(idusuario: int, estado: int, db: Session = Depends(get_write_db)):
+def activar_usuario(idusuario: int, estado: int, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
     # Aquí buscaremos al usuario por ID y cambiaremos su campo activo a 1 o 2
     user = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
     if not user:
@@ -172,4 +181,5 @@ def activar_usuario(idusuario: int, estado: int, db: Session = Depends(get_write
     
     user.activo = estado
     db.commit()
-    return {"msg": f"Usuario actualizado a nivel {estado}"}
+    logger.info(f"Usuario {user.idusuario} - {user.email} activado a nivel {estado}, por admin {admin.idusuario} - {admin.email}")
+    return {"msg": f"Usuario activado"}
