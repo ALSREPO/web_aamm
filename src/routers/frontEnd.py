@@ -38,7 +38,7 @@ def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
 
 
 ########################
-# /login y /registro
+# /login, /registro y /logout
 
 @router.get("/login")
 def vista_login(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
@@ -54,6 +54,12 @@ def vista_registro(request: Request, user: Usuario = Depends(obtener_usuario_act
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse("usuarios/registro.html", {"request": request})
 
+@router.get("/logout")
+async def logout():
+    response = RedirectResponse(url="/login", status_code=303)
+    # Borramos la cookie de acceso 
+    response.delete_cookie("access_token") 
+    return response
 
 ########################
 # Páginas de usuarios
