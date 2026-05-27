@@ -2,11 +2,10 @@ import logging
 
 from src.utils.auth import obtener_usuario_actual
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from src.models.models import Usuario
-
 
 router = APIRouter(prefix="", tags=["FrontEnd"])
 
@@ -54,3 +53,13 @@ def vista_registro(request: Request, user: Usuario = Depends(obtener_usuario_act
     if user:
         return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
     return templates.TemplateResponse("registro.html", {"request": request})
+
+
+########################
+# /perfil
+
+@router.get("/perfil", response_class=HTMLResponse)
+async def pagina_perfil(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    if not user:
+        return RedirectResponse(url="/login", status_code=303)
+    return templates.TemplateResponse("usuarios/perfil.html", {"request": request, "user": user})
