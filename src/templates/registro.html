@@ -1,3 +1,5 @@
+{% extends "base.html" %}
+
 {% block title %}Registro{% endblock %}
 
 {% block content %}
@@ -35,7 +37,7 @@
             </div>
 
             <button type="submit" 
-                class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
+                class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200">
                 Registrarse
             </button>
         </form>
@@ -49,7 +51,7 @@
             <a href="/login" class="text-blue-500 hover:underline font-semibold">Inicia sesión aquí</a>
         </div>
     </div>
-</div>>
+</div>
 
 <script>
 document.getElementById('registroForm').addEventListener('submit', async (e) => {
