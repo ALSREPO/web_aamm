@@ -20,6 +20,9 @@ logger = logging.getLogger("AAMM-APP-FrontEnd")
 
 # --- Rutas de Frontend (Jinja2) ---
 
+########################
+# / - Página Principal (Index)
+
 @router.get("/")
 def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     # Si el "portero" no devuelve un usuario, redirigimos al login
@@ -33,3 +36,21 @@ def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
         "request": request,
         "user": user,
     })
+
+
+########################
+# /login y /registro
+
+@router.get("/login")
+def vista_login(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    # Si ya está logueado y trata de ir al login, lo mandamos a la home
+    if user:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse("login.html", {"request": request})
+
+@router.get("/registro")
+def vista_registro(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    # Si ya está logueado, no tiene sentido que se registre, lo mandamos a la home
+    if user:
+        return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+    return templates.TemplateResponse("registro.html", {"request": request})

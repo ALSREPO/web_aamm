@@ -28,3 +28,12 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = os.environ.get("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+
+# 4. Configuración de correo (Dinámica)
+EMAIL_EMISOR = os.environ.get("EMAIL_EMISOR")
+BASE_URL = os.environ.get("BASE_URL")
+
+SMTP_SERVER = os.environ.get("SMTP_SERVER")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")

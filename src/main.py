@@ -54,6 +54,9 @@ app.add_middleware(LogIPMiddleware)
 from src.routers import login
 app.include_router(login.router)
 
+from src.routers import login
+app.include_router(login.router_raiz)
+
 from src.routers import usuarios
 app.include_router(usuarios.router)
 
