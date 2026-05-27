@@ -1,3 +1,6 @@
+{% block title %}Registro{% endblock %}
+
+{% block content %}
 <div class="max-w-md mx-auto mt-10">
     <div class="bg-white dark:bg-slate-800 p-8 rounded-xl shadow-xl border border-slate-200 dark:border-slate-700">
         <h2 class="text-2xl font-bold text-center mb-6 text-slate-800 dark:white">Crear nueva cuenta</h2>
@@ -46,4 +49,45 @@
             <a href="/login" class="text-blue-500 hover:underline font-semibold">Inicia sesión aquí</a>
         </div>
     </div>
-</div>
+</div>>
+
+<script>
+document.getElementById('registroForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const nombre = document.getElementById('nombre').value;
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    const passwordConfirm = document.getElementById('password_confirm').value;
+    const errorMsg = document.getElementById('errorPassword');
+
+    // VALIDACIÓN FRONTEND
+    if (password !== passwordConfirm) {
+        errorMsg.classList.remove('hidden');
+        document.getElementById('password_confirm').focus();
+        return; // Detenemos el envío
+    } else {
+        errorMsg.classList.add('hidden');
+    }
+
+    try {
+        const response = await fetch('/api/autenticacion/registro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nombre, email, password })
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            document.getElementById('registroForm').classList.add('hidden');
+            document.getElementById('mensajeExito').classList.remove('hidden');
+        } else {
+            alert("Error: " + result.detail);
+        }
+    } catch (error) {
+        alert("Error de conexión");
+    }
+});
+</script>
+{% endblock %}
