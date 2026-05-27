@@ -56,10 +56,19 @@ def vista_registro(request: Request, user: Usuario = Depends(obtener_usuario_act
 
 
 ########################
+# Páginas de usuarios
 # /perfil
+# /admin/gestion-usuarios
 
 @router.get("/perfil", response_class=HTMLResponse)
 async def pagina_perfil(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     if not user:
         return RedirectResponse(url="/login", status_code=303)
     return templates.TemplateResponse("usuarios/perfil.html", {"request": request, "user": user})
+
+
+@router.get("/admin/gestion-usuarios", response_class=HTMLResponse)
+async def pagina_admin_gestion_usuarios(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    if not user or user.activo < 2:
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse("usuarios/admin_gestion_usuarios.html", {"request": request, "user": user})
