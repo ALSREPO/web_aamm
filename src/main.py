@@ -63,6 +63,9 @@ app.include_router(usuarios.router)
 from src.routers import frontEnd
 app.include_router(frontEnd.router)
 
+from src.routers import tecnicas
+app.include_router(tecnicas.router)
+
 
 if __name__ == "__main__":
     import uvicorn

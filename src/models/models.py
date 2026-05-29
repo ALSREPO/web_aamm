@@ -14,3 +14,15 @@ class Usuario(Base):
     tchatfirst_name = Column(String(100))
     tchatlast_name = Column(String(100))
     email_verificado = Column(Boolean, default=False)
+
+
+
+class Disciplina(Base):
+    __tablename__ = "ta_disciplinas"
+    iddisciplina = Column(Integer, primary_key=True, autoincrement=True)
+    disciplina = Column(String(255), nullable=False)
+
+class Etiqueta(Base):
+    __tablename__ = "ta_etiquetas"
+    idetiqueta = Column(Integer, primary_key=True, autoincrement=True)
+    etiqueta = Column(String(255), nullable=False)
