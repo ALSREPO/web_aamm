@@ -1,6 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, Query, HTTPException
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from src.models.models import Usuario, Disciplina, Etiqueta
 from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase
@@ -31,19 +32,45 @@ def obtener_etiquetas(db: Session = Depends(get_read_db)):
 # Crear disciplinas y etiquetas
 @router.post("/disciplinas", dependencies=[Depends(verificar_admin)])
 def crear_disciplina(nombre: str, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
-    nueva = Disciplina(disciplina=nombre)
-    db.add(nueva)
-    db.commit()
-    logger.info(f"Nueva disciplina creada {nueva.iddisciplina} - {nueva.disciplina}, por admin {admin.idusuario} - {admin.email}")
-    return nueva
+    nombre_normalizado = "".join(nombre.split()).upper()
+    try:
+        disciplina_existente = db.query(Disciplina).filter(func.upper(func.replace(Disciplina.disciplina, ' ', '')) == nombre_normalizado).first()
+        if disciplina_existente:
+            logger.warning(f"Intento de crear disciplina duplicada '{disciplina_existente.iddisciplina} - {disciplina_existente.disciplina}' por admin {admin.idusuario} - {admin.email}")
+            raise HTTPException(status_code=400, detail="Disciplina ya existe")
+
+        nueva = Disciplina(disciplina=nombre)
+        db.add(nueva)
+        db.commit()
+        db.refresh(nueva)
+        logger.info(f"Nueva disciplina creada {nueva.iddisciplina} - {nueva.disciplina}, por admin {admin.idusuario} - {admin.email}")
+        return nueva
+    except HTTPException:
+        raise
+    except Exception as err:
+        logger.exception(f"Error creando disciplina '{nombre}' por admin {admin.idusuario} - {admin.email}: {err}")
+        raise HTTPException(status_code=500, detail="Error al crear disciplina")
 
 @router.post("/etiquetas", dependencies=[Depends(verificar_admin)])
 def crear_etiqueta(nombre: str, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
-    nueva = Etiqueta(etiqueta=nombre)
-    db.add(nueva)
-    db.commit()
-    logger.info(f"Nueva etiqueta creada {nueva.idetiqueta} - {nueva.etiqueta}, por admin {admin.idusuario} - {admin.email}")
-    return nueva
+    nombre_normalizado = "".join(nombre.split()).upper()
+    try:
+        etiqueta_existente = db.query(Etiqueta).filter(func.upper(func.replace(Etiqueta.etiqueta, ' ', '')) == nombre_normalizado).first()
+        if etiqueta_existente:
+            logger.warning(f"Intento de crear etiqueta duplicada '{etiqueta_existente.idetiqueta} - {etiqueta_existente.etiqueta}' por admin {admin.idusuario} - {admin.email}")
+            raise HTTPException(status_code=400, detail="Etiqueta ya existe")
+
+        nueva = Etiqueta(etiqueta=nombre)
+        db.add(nueva)
+        db.commit()
+        db.refresh(nueva)
+        logger.info(f"Nueva etiqueta creada {nueva.idetiqueta} - {nueva.etiqueta}, por admin {admin.idusuario} - {admin.email}")
+        return nueva
+    except HTTPException:
+        raise
+    except Exception as err:
+        logger.exception(f"Error creando etiqueta '{nombre}' por admin {admin.idusuario} - {admin.email}: {err}")
+        raise HTTPException(status_code=500, detail="Error al crear etiqueta")
 
     
 # Borrar disciplinas y etiquetas
