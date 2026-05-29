@@ -1,20 +1,24 @@
 import logging
 
 from fastapi import APIRouter, Depends, Query, HTTPException
-from sqlalchemy import func
-from sqlalchemy.orm import Session
-from src.models.models import Usuario, Disciplina, Etiqueta
-from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase
+from sqlalchemy import func, text, desc, asc
+from sqlalchemy.orm import Session, joinedload
+from typing import List, Optional
+from datetime import date
+from src.models.models import Usuario, Disciplina, Etiqueta, Tecnica
+from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_admin, usuario_obligatorio
+from src.config import ORDEN_LISTADO_TECNICAS, SENTIDO_ORDEN_LISTADO_TECNICAS, NUMERO_TECNICAS_POR_PAGINA
+
 
 router = APIRouter(prefix="/api/tecnicas", tags=["Técnicas"])
 
 logger = logging.getLogger("AAMM-APP-tecnicas")
 
 ########################################
-# /disciplinas        mostrar disciplinas
-# /etiquetas          mostrar etiquetas
+# /disciplinas        mostrar, insertar y eliminar
+# /etiquetas          mostrar, insertar y eliminar
 # 
 ########################################
 
@@ -99,3 +103,76 @@ def borrar_etiqueta(id: int, db: Session = Depends(get_write_db), admin: Usuario
         raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
 
     return {"ok": True}
+
+
+
+##################################
+
+# Técnicas
+
+@router.get("/", response_model=PaginaTecnicas, dependencies=[Depends(usuario_obligatorio)])
+def listar_tecnicas(
+    q: Optional[str] = Query(None),
+    fecha: Optional[date] = Query(None),
+    disciplina_id: List[int] = Query(None),
+    etiqueta_id: List[int] = Query(None),
+    ordenar_por: str = ORDEN_LISTADO_TECNICAS,
+    sentido: str = SENTIDO_ORDEN_LISTADO_TECNICAS,
+    skip: int = 0,
+    limit: int = NUMERO_TECNICAS_POR_PAGINA,
+    db: Session = Depends(get_read_db),
+    # Usamos la dependencia que lanza 401 si no hay usuario
+    usuario: Usuario = Depends(usuario_obligatorio) 
+):
+    # 1. Iniciamos la consulta con Eager Loading para que el JS no falle
+    #query = db.query(Tecnica).options(
+    #    joinedload(Tecnica.disciplinas),
+    #    joinedload(Tecnica.etiquetas)
+    #)
+    query = db.query(Tecnica)
+    
+    # 2. Filtro de texto FULLTEXT
+    if q:
+        query = query.filter(
+            text("MATCH(nombre, descripcion) AGAINST(:search IN BOOLEAN MODE)")
+        ).params(search=f"*{q}*")
+    
+    # 3. Filtro por fecha exacta
+    if fecha:
+        query = query.filter(Tecnica.fecha == fecha)
+
+    # 4. Filtros por Disciplinas (Lógica AND: debe cumplir todas las seleccionadas)
+    if disciplina_id:
+        for d_id in disciplina_id:
+            query = query.filter(Tecnica.disciplinas.any(Disciplina.iddisciplina == d_id))
+    
+    # 5. Filtros por Etiquetas (Lógica AND)
+    if etiqueta_id:
+        for e_id in etiqueta_id:
+            query = query.filter(Tecnica.etiquetas.any(Etiqueta.idetiqueta == e_id))
+    
+    # 6. Contar el total de resultados filtrados (Importante hacerlo antes del offset)
+    total_filtrados = query.count()
+    
+    
+    # 7. Ordenación Dinámica Segura
+    campos_validos = {
+        "id": Tecnica.idtecnica,
+        "nombre": Tecnica.nombre,
+        "fecha": Tecnica.fecha
+    }
+    
+    campo_db = campos_validos.get(ordenar_por, Tecnica.fecha)
+    criterio_orden = desc(campo_db) if sentido == "desc" else asc(campo_db)
+    
+    # 8. Traer solo la "página" actual con sus relaciones
+    resultados = query.options(
+        joinedload(Tecnica.disciplinas),
+        joinedload(Tecnica.etiquetas)
+    ).order_by(criterio_orden).offset(skip).limit(limit).all()
+
+    # 9. Devolvemos el objeto que encaja con PaginaTecnicas
+    return {
+        "total": total_filtrados,
+        "resultados": resultados
+    }
