@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date
 from src.models.models import Usuario, Disciplina, Etiqueta, Tecnica
-from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas
+from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas, TecnicaDetalle
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_admin, usuario_obligatorio
 from src.config import ORDEN_LISTADO_TECNICAS, SENTIDO_ORDEN_LISTADO_TECNICAS, NUMERO_TECNICAS_POR_PAGINA
@@ -107,8 +107,8 @@ def borrar_etiqueta(id: int, db: Session = Depends(get_write_db), admin: Usuario
 
 
 ##################################
-
-# Técnicas
+#
+# Listado de Técnicas para la página principal, con filtros y paginación
 
 @router.get("/", response_model=PaginaTecnicas, dependencies=[Depends(usuario_obligatorio)])
 def listar_tecnicas(
@@ -171,8 +171,32 @@ def listar_tecnicas(
         joinedload(Tecnica.etiquetas)
     ).order_by(criterio_orden).offset(skip).limit(limit).all()
 
+    logger.info(f"Listado de técnicas obtenido por usuario {usuario.idusuario} - {usuario.email} con filtros q='{q}', fecha='{fecha}', disciplina_id={disciplina_id}, etiqueta_id={etiqueta_id}, ordenado_por='{ordenar_por}', sentido='{sentido}', skip={skip}, limit={limit}. Total filtrados: {total_filtrados}")
+
     # 9. Devolvemos el objeto que encaja con PaginaTecnicas
     return {
         "total": total_filtrados,
         "resultados": resultados
     }
+
+
+# Obtener detalle de técnica (para la página de detalle, con sus vídeos, disciplinas y etiquetas)
+
+@router.get("/{idtecnica}", response_model=TecnicaDetalle, dependencies=[Depends(usuario_obligatorio)])
+def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario: Usuario = Depends(usuario_obligatorio)):
+    try:
+        tecnica = db.query(Tecnica).options(
+            joinedload(Tecnica.disciplinas),
+            joinedload(Tecnica.etiquetas),
+            joinedload(Tecnica.videos) # Carga la relación de vídeos
+        ).filter(Tecnica.idtecnica == idtecnica).first()
+        
+        if not tecnica:
+            logger.warning(f"Intento de acceso a técnica no encontrada con id {idtecnica} por usuario {usuario.idusuario} - {usuario.email}")
+            raise HTTPException(status_code=404, detail="Técnica no encontrada")
+        
+        logger.info(f"Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido por usuario {usuario.idusuario} - {usuario.email}")
+        return tecnica
+    except Exception as e:
+        logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario {usuario.idusuario} - {usuario.email}: {e}")
+        raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")

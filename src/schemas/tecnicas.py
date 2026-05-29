@@ -26,6 +26,20 @@ class TecnicaRead(BaseModel):
     class Config:
         from_attributes = True
 
+# Para el detalle de cada técnica
+class VideoRead(BaseModel):
+    #idvideo: int
+    video: str  # Aquí guardaremos el "nombre.mp4"
+    #orden: int
+    
+    class Config:
+        from_attributes = True
+
+
+# vista de detalle de una técnica
+class TecnicaDetalle(TecnicaRead):
+    videos: List[VideoRead] = [] # Aquí incluimos la lista de vídeos
+
 # listado de tecnicas
 class PaginaTecnicas(BaseModel):
     total: int
