@@ -275,6 +275,7 @@ async function cargarTecnicas(parametros = "", esCargaMas = false) {
 
         // 6. Actualizar el skip y gestionar el botón "Ver más"
         skip += data.resultados.length;
+		gestionarBotonVerMas(data.total);
 
     } catch (error) {
         console.error("Fallo en el renderizado:", error);
@@ -359,6 +360,70 @@ function generarCard(t) {
     `;
 }
 
+// 7. Función para filtrar por fecha al hacer click en la fecha de la tarjeta (esto es solo un ejemplo, puedes adaptarlo para que filtre por otros campos también)
+function filtrarPorFecha(fechaIso) {
+    // Ponemos la fecha en el input para que el usuario vea qué filtró
+    document.getElementById('input-fecha').value = fechaIso;
+    // Ejecutamos la carga
+    cargarTecnicas(`fecha=${fechaIso}`);
+}
+
+// 8. Función para gestionar el botón "Cargar más" o mostrar mensaje de final de resultados
+function gestionarBotonVerMas(total) {
+    // 1. Buscamos y eliminamos el contenedor entero (que incluye al botón)
+    const contenedorBtn = document.getElementById('btn-container');
+    if (contenedorBtn) contenedorBtn.remove();
+    
+    // Por si acaso quedó algún mensaje final de "Has llegado al final" de antes, lo limpiamos también
+    const mensajeFinal = document.getElementById('mensaje-final-biblioteca');
+    if (mensajeFinal) mensajeFinal.remove();
+
+    // 2. Si aún no hemos cargado todas las técnicas existentes
+    if (skip < total) {
+        const btnHtml = `
+            <div id="btn-container" class="col-span-full flex justify-center py-8">
+                <button id="btn-cargar-mas" onclick="cargarMas()" 
+                    class="bg-slate-800 text-white px-10 py-3 rounded-xl font-bold hover:bg-blue-600 transition-all shadow-lg">
+                    Cargar más técnicas
+                </button>
+            </div>`;
+        grid.insertAdjacentHTML('afterend', btnHtml);
+    } else {
+        // 3. Si llegamos al final, metemos el mensaje envuelto en su propio contenedor para mantener el diseño limpio
+        const finalHtml = `
+            <div id="mensaje-final-biblioteca" class="col-span-full text-center py-8">
+                <p class="text-slate-400 text-sm">Has llegado al final de la biblioteca</p>
+            </div>`;
+        grid.insertAdjacentHTML('afterend', finalHtml);
+    }
+}
+
+	function cargarMas() {
+		// Usamos los filtros actuales para que el "Ver más" mantenga la búsqueda
+		cargarTecnicas(filtrosActuales, true);
+	}
+
+// 9. Función para limpiar todos los filtros y volver al estado original
+	function limpiarFiltros() {
+		// 1. Resetear el formulario completo (esto limpia inputs de texto, fecha y checkboxes)
+		const form = document.getElementById('form-busqueda');
+		form.reset();
+
+		// 2. Resetear el sentido del orden manualmente (volver a por defecto: DESC)
+		const inputSentido = document.getElementById('input-sentido');
+		const iconSentido = document.getElementById('icon-sentido');
+		inputSentido.value = 'desc';
+		iconSentido.innerText = '↓';
+
+		// 3. Limpiar la variable global de filtros para que el "Cargar más" funcione bien
+		filtrosActuales = "";
+
+		// 4. Recargar el listado original (sin parámetros)
+		cargarTecnicas();
+
+		// 5. (Opcional) Si quieres que el buscador se cierre al limpiar
+		// toggleBuscador();
+	}
 
 </script>
 {% endblock %}
