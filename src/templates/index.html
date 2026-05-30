@@ -138,5 +138,24 @@ function toggleBuscador() {
     texto.innerText = panel.classList.contains('hidden') ? 'Mostrar Buscador' : 'Ocultar Buscador';
 }
 
+
+// 3. Variable para el icono del sentido (Fecha, ID, Nombre)
+function toggleSentido() {
+    const input = document.getElementById('input-sentido');
+    const icon = document.getElementById('icon-sentido');
+	
+	// 1. Alternar valores
+    if (input.value === 'desc') {
+        input.value = 'asc';
+        icon.innerText = '↑';
+    } else {
+        input.value = 'desc';
+        icon.innerText = '↓';
+    }
+	
+	// 2. Disparar la búsqueda automáticamente
+    // Llamamos al submit del formulario de forma programada, NOTA: incluir cuando funcione el buscador
+    // document.getElementById('form-busqueda').requestSubmit();
+}
 </script>
 {% endblock %}
