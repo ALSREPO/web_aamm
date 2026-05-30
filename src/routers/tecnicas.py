@@ -248,6 +248,7 @@ def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), ad
         raise HTTPException(status_code=500, detail="Error al crear técnica")
 
 
+# Actualizar técnica (solo para admins, con disciplinas, etiquetas y vídeos asociados)
 
 @router.put("/{idtecnica}", response_model=TecnicaRead, dependencies=[Depends(verificar_admin)])
 def actualizar_tecnica(idtecnica: int, obj_in: TecnicaCreate, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
@@ -280,3 +281,24 @@ def actualizar_tecnica(idtecnica: int, obj_in: TecnicaCreate, db: Session = Depe
         logger.error(f"Error al actualizar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
         raise HTTPException(status_code=500, detail="Error al actualizar técnica")
 
+
+# Borrar técnica (solo para admins, con borrado en cascada de vídeos asociados)
+
+@router.delete("/{idtecnica}", dependencies=[Depends(verificar_admin)])
+def borrar_tecnica(idtecnica: int, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
+
+    try:
+        tecnica = db.query(Tecnica).filter(Tecnica.idtecnica == idtecnica).first()
+        
+        if not tecnica:
+            raise HTTPException(status_code=404, detail="Técnica no encontrada")
+
+        # SQLAlchemy se encargará de borrar los vídeos asociados si pusiste 
+        # cascade="all, delete-orphan" en la relación del modelo.
+        db.delete(tecnica)
+        db.commit()
+        logger.info(f"Técnica borrada {tecnica.idtecnica} - {tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        return None
+    except Exception as e:
+        logger.error(f"Error al borrar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
+        raise HTTPException(status_code=500, detail="Error al borrar técnica")
