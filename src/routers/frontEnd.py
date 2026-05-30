@@ -4,6 +4,7 @@ from src.utils.auth import obtener_usuario_actual
 from fastapi import APIRouter, Depends, Request, status
 from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from typing import Optional
 
 from src.models.models import Usuario
 from src.config import NUMERO_TECNICAS_POR_PAGINA
@@ -98,4 +99,22 @@ async def pagina_detalle_tecnica(
         "request": request, 
         "idtecnica": idtecnica, 
         "user": user  # Lo pasamos para que el HTML sepa si es admin o no
+    })
+
+
+########################
+# Crear y Editar una técnica
+
+@router.get("/admin/tecnica", response_class=HTMLResponse)
+async def pagina_admin_tecnica(
+    request: Request, 
+    idtecnica: Optional[int] = None, # Añadimos el ID opcional. Si lo incluye, se edita esa tecnica. Si no lo incluye, se crea una nueva tecnica
+    user: Usuario = Depends(obtener_usuario_actual)
+):
+    if not user or user.activo < 2:
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse("tecnicas/crear_editar_tecnica.html", {
+        "request": request, 
+        "user": user, 
+        "idtecnica": idtecnica # Lo pasamos a la plantilla
     })
