@@ -2,6 +2,7 @@ import logging
 from fastapi import FastAPI, Depends, Request, status
 from fastapi.responses import RedirectResponse
 from starlette.middleware.base import BaseHTTPMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.utils.logging_config import configurar_logs, client_ip_ctx  # Importamos el módulo de logs
 from src.utils import auth
@@ -15,6 +16,11 @@ models.Base.metadata.create_all(bind=engine_read_only)
 ###########################################################
 # Inicializamos la aplicación FastAPI
 app = FastAPI(title="AAMM - Artes Marciales")
+
+
+###########################################################
+# Configuramos el manejo de archivos estáticos (CSS, JS y vídeos)
+app.mount("/static", StaticFiles(directory="src/static"), name="static")
 
 
 ###########################################################

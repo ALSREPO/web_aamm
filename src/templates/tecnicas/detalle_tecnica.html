@@ -21,9 +21,22 @@
 		</div>
 
 		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-			
-            <!-- descripción -->
 			<div class="lg:col-span-2 space-y-6">
+
+                <!-- video -->
+                 <div id="wrapper-video" class="hidden space-y-6">
+					<!-- VIDEO EN HORIZONTAL, SI EL VIDEO ES VERTICAL, SE VE CON BLOQUES NEGROS A LOS LADOS
+					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video flex items-center justify-center">
+						<video id="main-video" controls class="w-full h-full" src=""></video>
+					</div>
+					-->
+					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center max-h-[70vh] w-full">
+						<video id="main-video" controls class="max-w-full max-h-[70vh] w-auto h-auto" src=""></video>
+					</div>
+					<div id="lista-videos" class="flex gap-4 overflow-x-auto pb-2"></div>
+				</div>
+
+                <!-- descripción -->
 				<div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
 					<h2 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Descripción</h2>
 					<p id="desc-tecnica" class="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line"></p>
@@ -94,6 +107,31 @@
 				</a>
 			`).join('');
 
+
+             // Lógica de vídeos
+            const wrapperVideo = document.getElementById('wrapper-video');
+			const mainVideo = document.getElementById('main-video');
+
+			if (t.videos && t.videos.length > 0) {
+				// Si hay vídeos, mostramos el contenedor y cargamos el primero
+				wrapperVideo.classList.remove('hidden');
+				mainVideo.src = `/static/videos/${t.videos[0].video}`;
+				
+				if (t.videos.length > 1) {
+					document.getElementById('lista-videos').innerHTML = t.videos.map((v, index) => `
+						<button onclick="cambiarVideo('/static/videos/${v.video}')" 
+							class="flex-none w-32 aspect-video bg-slate-900 rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition focus:border-blue-500 relative group">
+							<div class="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/10 transition text-[10px] text-white font-bold">VÍDEO ${index + 1}</div>
+						</button>
+					`).join('');
+				} else {
+					document.getElementById('lista-videos').innerHTML = ''; // Limpiar si solo hay uno
+				}
+			} else {
+				// Si no hay vídeos, el wrapperVideo se queda con 'hidden'
+				console.log("Esta técnica no tiene vídeos.");
+			}
+
             document.getElementById('detalle-contenedor').classList.remove('hidden');
 
         } catch (error) {
@@ -102,6 +140,12 @@
             document.getElementById('detalle-contenedor').classList.remove('hidden');
         }
     });
+
+    function cambiarVideo(src) {
+        const video = document.getElementById('main-video');
+        video.src = src;
+        video.play();
+    }
 
 
 </script>
