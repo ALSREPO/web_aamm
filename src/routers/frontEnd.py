@@ -6,7 +6,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from src.models.models import Usuario
-from src.config import ORDEN_LISTADO_TECNICAS, SENTIDO_ORDEN_LISTADO_TECNICAS, NUMERO_TECNICAS_POR_PAGINA
+from src.config import NUMERO_TECNICAS_POR_PAGINA
 
 router = APIRouter(prefix="", tags=["FrontEnd"])
 
@@ -35,9 +35,7 @@ def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
-        "ORDEN_LISTADO_TECNICAS" : ORDEN_LISTADO_TECNICAS,
         "NUMERO_TECNICAS_POR_PAGINA" : NUMERO_TECNICAS_POR_PAGINA,
-        "SENTIDO_ORDEN_LISTADO_TECNICAS" : SENTIDO_ORDEN_LISTADO_TECNICAS,
     })
 
 
@@ -82,3 +80,22 @@ async def pagina_admin_gestion_usuarios(request: Request, user: Usuario = Depend
     if not user or user.activo < 2:
         return RedirectResponse(url="/", status_code=303)
     return templates.TemplateResponse("usuarios/admin_gestion_usuarios.html", {"request": request, "user": user})
+
+
+########################
+# detalle de una técnica
+
+@router.get("/tecnica/{idtecnica}", response_class=HTMLResponse)
+async def pagina_detalle_tecnica(
+    request: Request, 
+    idtecnica: int, 
+    user: Usuario = Depends(obtener_usuario_actual)
+):
+    if not user:
+        return RedirectResponse(url="/", status_code=303)
+
+    return templates.TemplateResponse("tecnicas/detalle_tecnica.html", {
+        "request": request, 
+        "idtecnica": idtecnica, 
+        "user": user  # Lo pasamos para que el HTML sepa si es admin o no
+    })
