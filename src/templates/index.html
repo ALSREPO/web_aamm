@@ -20,5 +20,94 @@
         </div>
     </div>
 
+
+	<div id="panel-buscador" class=" mb-8 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+		<form id="form-busqueda" class="space-y-4">
+			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+				<div class="md:col-span-2">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Palabra clave</label>
+					<input type="text" id="input-q" placeholder="Ej: 'llave de brazo', 'proyección'..." 
+						class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+				
+				<div class="md:col-span-1">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha exacta</label>
+					<input type="date" id="input-fecha" 
+						class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+				</div>
+	
+				
+				<div class="md:col-span-1">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Orden</label>
+					<div class="flex gap-2">
+						<select id="select-orden" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none text-sm">
+							<option value="fecha">Fecha</option>
+							<option value="nombre">Nombre</option>
+							<option value="id">ID</option>
+						</select>
+						<button type="button" onclick="toggleSentido()" id="btn-sentido" title="Cambiar orden"
+							class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 rounded-lg hover:bg-slate-100 transition">
+							<span id="icon-sentido">↓</span>
+						</button>
+						<input type="hidden" id="input-sentido" value="desc">
+					</div>
+				</div>
+	
+	
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+				<div class="md:col-span-1">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Disciplinas</label>
+					<div id="container-disciplinas" class="flex flex-wrap gap-2">
+						</div>
+				</div>
+				
+				<div class="md:col-span-4">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Etiquetas</label>
+					<div id="container-etiquetas" class="h-32 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 flex flex-wrap gap-2">
+						</div>
+				</div>
+			</div>
+
+			<div class="flex justify-end gap-2 pt-2">
+				<button type="button" onclick="limpiarFiltros()" class="px-4 py-2 text-sm font-bold text-slate-500">Limpiar</button>
+				<button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition">Aplicar Filtros</button>
+			</div>
+		</form>
+	</div>
+
 </div>
+
+<script>
+
+// Cargar datos del buscador (Disciplinas y Etiquetas)
+async function cargarAuxiliares() {
+    const [resD, resE] = await Promise.all([
+        fetch('/api/tecnicas/disciplinas'),
+        fetch('/api/tecnicas/etiquetas')
+    ]);
+    const disciplinas = await resD.json();
+    const etiquetas = await resE.json();
+
+    // Disciplinas (checkbox para multiselección)
+    document.getElementById('container-disciplinas').innerHTML = disciplinas.map(d => `
+        <label class="flex items-center gap-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 py-1 rounded-full cursor-pointer hover:border-blue-500 transition">
+            <input type="checkbox" name="disciplina_id" value="${d.iddisciplina}" class="rounded">
+            <span class="text-xs font-bold">${d.disciplina}</span>
+        </label>
+    `).join('');
+
+    // Etiquetas (checkbox para multiselección)
+    document.getElementById('container-etiquetas').innerHTML = etiquetas.map(e => `
+        <label class="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-2 py-1 rounded cursor-pointer hover:border-blue-500 transition">
+            <input type="checkbox" name="etiqueta_id" value="${e.idetiqueta}" class="rounded">
+            <span class="text-[11px] font-medium">#${e.etiqueta}</span>
+        </label>
+    `).join('');
+}
+// Llamar al inicio
+cargarAuxiliares();
+
+</script>
 {% endblock %}
