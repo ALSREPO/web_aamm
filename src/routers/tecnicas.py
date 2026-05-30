@@ -202,6 +202,7 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
         raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")
 
 
+# Crear nueva técnica (solo para admins, con disciplinas, etiquetas y vídeos asociados)
 
 @router.post("/", response_model=TecnicaRead, dependencies=[Depends(verificar_admin)])
 def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
@@ -241,7 +242,41 @@ def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), ad
         db.refresh(nueva_tecnica)
         logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
         return nueva_tecnica
-        
+
     except Exception as e:
         logger.error(f"Error al crear técnica '{obj_in.nombre}' por admin {admin.idusuario} - {admin.email}: {e}")
         raise HTTPException(status_code=500, detail="Error al crear técnica")
+
+
+
+@router.put("/{idtecnica}", response_model=TecnicaRead, dependencies=[Depends(verificar_admin)])
+def actualizar_tecnica(idtecnica: int, obj_in: TecnicaCreate, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
+
+    try:
+        tecnica = db.query(Tecnica).filter(Tecnica.idtecnica == idtecnica).first()
+        if not tecnica:
+            raise HTTPException(status_code=404, detail="Técnica no encontrada")
+
+        # Actualizar campos básicos
+        tecnica.nombre = obj_in.nombre
+        tecnica.descripcion = obj_in.descripcion
+        tecnica.fecha = obj_in.fecha
+
+        # Actualizar Relaciones (SQLAlchemy borra las antiguas y pone las nuevas automáticamente)
+        tecnica.disciplinas = db.query(Disciplina).filter(Disciplina.iddisciplina.in_(obj_in.disciplinas_ids)).all()
+        tecnica.etiquetas = db.query(Etiqueta).filter(Etiqueta.idetiqueta.in_(obj_in.etiquetas_ids)).all()
+
+        # Actualizar Vídeos (Borramos los actuales y creamos los nuevos)
+        db.query(Video).filter(Video.idtecnica == idtecnica).delete()
+        for nombre_v in obj_in.videos_nombres:
+            nuevo_v = Video(video=nombre_v, idtecnica=idtecnica)
+            db.add(nuevo_v)
+
+        db.commit()
+        db.refresh(tecnica)
+        logger.info(f"Técnica actualizada {tecnica.idtecnica} - {tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        return tecnica
+    except Exception as e:
+        logger.error(f"Error al actualizar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
+        raise HTTPException(status_code=500, detail="Error al actualizar técnica")
+
