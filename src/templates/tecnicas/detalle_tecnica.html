@@ -56,6 +56,22 @@
 							<div id="etiquetas-detalle" class="flex flex-wrap gap-2"></div>
 						</div>
 					</div>
+
+                    <!-- Botones de edición y eliminación solo para administradores -->
+                    {% if user.activo >= 2 %}
+					<div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 space-y-3">
+						<button onclick="location.href='/admin/tecnica?idtecnica={{ idtecnica }}'" 
+							class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white font-bold py-3 rounded-xl hover:bg-blue-600 hover:text-white transition">
+							Editar Técnica
+						</button>
+						
+						<button onclick="confirmarBorrado({{ idtecnica }})" 
+							class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition">
+							Eliminar
+						</button>
+					</div>
+					{% endif %}
+
 				</div>
 			</div>
 
@@ -145,6 +161,22 @@
         const video = document.getElementById('main-video');
         video.src = src;
         video.play();
+    }
+	
+	async function confirmarBorrado(id) {
+        if (confirm('¿Estás seguro de que deseas eliminar esta técnica? Esta acción no se puede deshacer.')) {
+            try {
+                const response = await fetch(`/api/tecnicas/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    window.location.href = '/'; // Redirigir al listado tras borrar
+                } else {
+                    alert('Error al eliminar la técnica');
+                }
+            } catch (error) {
+                console.error(error);
+                alert('Error de conexión');
+            }
+        }
     }
 
 
