@@ -6,6 +6,7 @@ from fastapi.responses import RedirectResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 
 from src.models.models import Usuario
+from src.config import ORDEN_LISTADO_TECNICAS, SENTIDO_ORDEN_LISTADO_TECNICAS, NUMERO_TECNICAS_POR_PAGINA
 
 router = APIRouter(prefix="", tags=["FrontEnd"])
 
@@ -34,6 +35,9 @@ def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
+        "ORDEN_LISTADO_TECNICAS" : ORDEN_LISTADO_TECNICAS,
+        "NUMERO_TECNICAS_POR_PAGINA" : NUMERO_TECNICAS_POR_PAGINA,
+        "SENTIDO_ORDEN_LISTADO_TECNICAS" : SENTIDO_ORDEN_LISTADO_TECNICAS,
     })
 
 

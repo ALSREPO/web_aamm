@@ -1,10 +1,10 @@
+{% extends "base.html" %}
+
 <script>
 //////////////////////////////////
 // INICIO: index.html, listado de técnicas
-
 </script>
 
-{% extends "base.html" %}
 
 {% block title %}Biblioteca de Técnicas{% endblock %}
 
@@ -18,6 +18,14 @@
             </h1>
             <p class="text-slate-500 dark:text-slate-400 mt-1">Explora y filtra la biblioteca de conocimientos.</p>
         </div>
+    </div>
+
+    <!-- contenedor para limpiar filtros-->
+    <div id="status-filtros" class="hidden mb-6 flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800">
+        <span id="texto-filtro" class="text-blue-700 dark:text-blue-300 text-sm font-medium"></span>
+        <button onclick="limpiarFiltros()" class="text-blue-700 dark:text-blue-300 hover:underline text-sm font-bold">
+            Limpiar todos los filtros
+        </button>
     </div>
 
 
@@ -97,10 +105,50 @@
 			</div>
 		</form>
 	</div>
+    <!-- fin formulario de busqueda -->
+
+    <!-- Contenedor para las tarjetas de técnicas -->
+    <div id="grid-tecnicas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="col-span-full py-20 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-slate-500">Cargando biblioteca...</p>
+        </div>
+    </div>
 
 </div>
 
 <script>
+let skip = 0;
+const limit = {{ NUMERO_TECNICAS_POR_PAGINA }} ;
+let filtrosActuales = "";
+
+    // Variables globales
+    const userRole = {{ user.activo }};
+    const grid = document.getElementById('grid-tecnicas');
+    const statusFiltros = document.getElementById('status-filtros');
+    const textoFiltro = document.getElementById('texto-filtro');
+
+    // Carga inicial
+    document.addEventListener('DOMContentLoaded', () => cargarTecnicas());
+	document.addEventListener('DOMContentLoaded', async () => {
+		// 1. Leer parámetros de la URL (si venimos de otra página, por ejmplo, el detalle)
+		const urlParams = new URLSearchParams(window.location.search);
+		
+		// 2. Si hay parámetros, guardarlos en nuestra variable global y cargar
+		if (urlParams.toString()) {
+			filtrosActuales = urlParams.toString();
+			
+			// Opcional: Rellenar visualmente el input de fecha si viene en la URL
+			if(urlParams.has('fecha')) document.getElementById('input-fecha').value = urlParams.get('fecha');
+			
+			cargarTecnicas(filtrosActuales);
+		} else {
+			cargarTecnicas(); // Carga normal sin filtros
+		}
+
+		await cargarAuxiliares(); // Cargar los checkboxes de etiquetas/disciplinas
+	});
+
 
 // 1. Cargar datos del buscador (Disciplinas y Etiquetas)
 async function cargarAuxiliares() {
@@ -154,8 +202,163 @@ function toggleSentido() {
     }
 	
 	// 2. Disparar la búsqueda automáticamente
-    // Llamamos al submit del formulario de forma programada, NOTA: incluir cuando funcione el buscador
-    // document.getElementById('form-busqueda').requestSubmit();
+    // Llamamos al submit del formulario de forma programada
+    document.getElementById('form-busqueda').requestSubmit();
 }
+
+// 4. Manejar el envío del formulario de búsqueda	
+document.getElementById('form-busqueda').onsubmit = (e) => {
+    e.preventDefault();
+    const params = new URLSearchParams();
+
+    const q = document.getElementById('input-q').value;
+    const fecha = document.getElementById('input-fecha').value;
+    const orden = document.getElementById('select-orden').value;
+    const sentido = document.getElementById('input-sentido').value;
+
+    if(q) params.append('q', q);
+    if(fecha) params.append('fecha', fecha);
+    params.append('ordenar_por', orden);
+    params.append('sentido', sentido);
+    
+    // Disciplinas y Etiquetas (recorrer checkboxes como antes)
+    const formData = new FormData(e.target);
+    formData.getAll('disciplina_id').forEach(id => params.append('disciplina_id', id));
+    formData.getAll('etiqueta_id').forEach(id => params.append('etiqueta_id', id));
+
+    filtrosActuales = params.toString();
+    cargarTecnicas(filtrosActuales);
+};
+
+// 5. Función cargarTecnicas con paginación y gestión de resultados
+async function cargarTecnicas(parametros = "", esCargaMas = false) {
+    const grid = document.getElementById('grid-tecnicas');
+    const statusFiltros = document.getElementById('status-filtros');
+    const textoFiltro = document.getElementById('texto-filtro');
+
+    // 1. Gestionar el inicio de la carga
+    if (!esCargaMas) {
+        skip = 0; // Reiniciamos el contador si es búsqueda nueva
+        grid.innerHTML = '<div class="col-span-full text-center py-10"><p class="animate-pulse">Buscando técnicas...</p></div>';
+    }
+
+    try {
+        // 2. Construir la URL con paginación
+        const url = `/api/tecnicas/?${parametros}&skip=${skip}&limit=${limit}`;
+        const response = await fetch(url);
+        
+        // Importante: Aquí recibimos el objeto PaginaTecnicas
+        const data = await response.json(); 
+
+        // 3. Actualizar el contador con data.total
+        if (parametros || data.total > 0) {
+            statusFiltros.classList.remove('hidden');
+            textoFiltro.innerText = `Se han encontrado ${data.total} técnicas en total.`;
+        } else {
+            statusFiltros.classList.add('hidden');
+        }
+
+        // 4. Si no hay resultados
+        if (data.resultados.length === 0 && !esCargaMas) {
+            grid.innerHTML = '<div class="col-span-full text-center py-20 text-slate-500">No hay resultados para esta búsqueda. <br> <button onclick="limpiarFiltros()" class="text-blue-700 dark:text-blue-300 hover:underline text-sm font-bold">Limpiar todos los filtros</button> </div></div>';
+            return;
+        }
+
+        // 5. Renderizar las tarjetas usando data.resultados
+        const html = data.resultados.map(t => generarCard(t)).join('');
+        
+        if (esCargaMas) {
+            grid.insertAdjacentHTML('beforeend', html);
+        } else {
+            grid.innerHTML = html;
+        }
+
+        // 6. Actualizar el skip y gestionar el botón "Ver más"
+        skip += data.resultados.length;
+
+    } catch (error) {
+        console.error("Fallo en el renderizado:", error);
+        grid.innerHTML = '<p class="text-red-500 text-center col-span-full font-bold">Error al procesar los datos de la biblioteca.</p>';
+    }
+}
+
+
+// 6. Función que genera las tarjetas con la información de cada técnica, incluyendo disciplinas, etiquetas y botones de admin si el usuario tiene permisos
+
+function generarCard(t) {
+    // 1. Formatear la fecha para que no de error
+    const fechaStr = t.fecha ? new Date(t.fecha).toLocaleDateString('es-ES') : 'Sin fecha';
+	
+	// Importante: t.fecha viene como "2025-04-18" (formato ISO)
+    const fechaVisual = new Date(t.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'short', year: 'numeric' });
+
+    // 2. Badges de Disciplinas (¡CUIDADO AQUÍ CON EL NOMBRE DEL CAMPO!)
+    // En tu JSON es d.disciplina, NO d.nombre
+    const disciplinasHTML = (t.disciplinas || []).map(d => `
+        <span onclick="event.stopPropagation(); cargarTecnicas('disciplina_id=${d.iddisciplina}')" 
+              class="cursor-pointer bg-slate-800 dark:bg-slate-700 hover:bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded transition-colors uppercase">
+            ${d.disciplina} 
+        </span>
+    `).join('');
+
+    // 3. Badges de Etiquetas
+    // En tu JSON es e.etiqueta, NO e.nombre
+    const etiquetasHTML = (t.etiquetas || []).map(e => `
+        <span onclick="event.stopPropagation(); cargarTecnicas('etiqueta_id=${e.idetiqueta}')" 
+              class="cursor-pointer text-blue-600 dark:text-blue-400 text-[10px] font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 hover:bg-blue-100 transition-colors">
+            #${e.etiqueta}
+        </span>
+    `).join('');
+
+    // 4. Botones Admin
+    const botonesAdmin = userRole >= 2 ? `
+        <div class="flex gap-2 mt-4 pt-4 border-t border-slate-100 dark:border-slate-700">
+            <button onclick="event.stopPropagation(); editarTecnica(${t.idtecnica})" class="flex-1 text-slate-600 dark:text-slate-300 text-xs font-bold py-2 bg-slate-100 dark:bg-slate-700 rounded-lg hover:bg-slate-200 transition">EDITAR</button>
+            <button onclick="event.stopPropagation(); borrarTecnica(${t.idtecnica})" class="flex-1 text-red-600 text-xs font-bold py-2 bg-red-50 dark:bg-red-900/20 rounded-lg hover:bg-red-100 transition">BORRAR</button>
+        </div>
+    ` : '';
+
+    // 5. El retorno del HTML (asegúrate de que los campos t.nombre y t.descripcion coincidan)
+    return `
+        <div class="group bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden flex flex-col h-full hover:shadow-xl hover:border-blue-300 dark:hover:border-blue-500 transition-all duration-300 cursor-pointer" 
+             onclick="location.href='/tecnica/${t.idtecnica}'">
+            
+            <div class="p-5 flex-grow">
+                <div class="flex justify-between items-center mb-4">
+                    <span onclick="event.stopPropagation(); filtrarPorFecha('${t.fecha}')" 
+                          class="cursor-pointer hover:text-blue-600 transition-colors text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                        ${fechaVisual}
+                    </span>
+					
+                    ${t.cantidad_videos > 0 ? `
+                        <div class="flex items-center gap-1 text-amber-500 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded-md">
+                            <span class="text-[10px] font-black">${t.cantidad_videos} VIDEO/S</span>
+                        </div>
+                    ` : ''}
+                </div>
+
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-blue-600 transition-colors">${t.nombre}</h3>
+                
+                <div class="flex flex-wrap gap-1.5 mb-4">
+                    ${disciplinasHTML}
+                </div>
+
+                <p class="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 mb-4 leading-relaxed">
+                    ${t.descripcion}
+                </p>
+
+                <div class="flex flex-wrap gap-1.5 mt-auto">
+                    ${etiquetasHTML}
+                </div>
+            </div>
+
+            <div class="px-5 pb-5">
+                ${botonesAdmin}
+            </div>
+        </div>
+    `;
+}
+
+
 </script>
 {% endblock %}
