@@ -5,8 +5,8 @@ from sqlalchemy import func, text, desc, asc
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date
-from src.models.models import Usuario, Disciplina, Etiqueta, Tecnica
-from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas, TecnicaDetalle
+from src.models.models import Usuario, Disciplina, Etiqueta, Tecnica, Video
+from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas, TecnicaDetalle, TecnicaCreate, TecnicaRead
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_admin, usuario_obligatorio
 from src.config import ORDEN_LISTADO_TECNICAS, SENTIDO_ORDEN_LISTADO_TECNICAS, NUMERO_TECNICAS_POR_PAGINA
@@ -200,3 +200,48 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
     except Exception as e:
         logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario {usuario.idusuario} - {usuario.email}: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")
+
+
+
+@router.post("/", response_model=TecnicaRead, dependencies=[Depends(verificar_admin)])
+def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
+
+    try: 
+        # 1. Crear la instancia básica de la Técnica
+        nueva_tecnica = Tecnica(
+            nombre=obj_in.nombre,
+            descripcion=obj_in.descripcion,
+            fecha=obj_in.fecha
+        )
+
+        # 2. Asociar Disciplinas
+        if obj_in.disciplinas_ids:
+            disciplinas = db.query(Disciplina).filter(Disciplina.iddisciplina.in_(obj_in.disciplinas_ids)).all()
+            nueva_tecnica.disciplinas = disciplinas
+
+        # 3. Asociar Etiquetas
+        if obj_in.etiquetas_ids:
+            etiquetas = db.query(Etiqueta).filter(Etiqueta.idetiqueta.in_(obj_in.etiquetas_ids)).all()
+            nueva_tecnica.etiquetas = etiquetas
+
+        # 4. Añadir a la sesión para obtener el ID
+        db.add(nueva_tecnica)
+        db.flush() # flush nos da el ID sin hacer commit definitivo todavía
+
+        # 5. Crear los registros de Vídeos
+        for nombre_fichero in obj_in.videos_nombres:
+            nuevo_video = Video(
+                video=nombre_fichero,
+                idtecnica=nueva_tecnica.idtecnica
+            )
+            db.add(nuevo_video)
+
+        # 6. Guardar todo en la BBDD
+        db.commit()
+        db.refresh(nueva_tecnica)
+        logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        return nueva_tecnica
+        
+    except Exception as e:
+        logger.error(f"Error al crear técnica '{obj_in.nombre}' por admin {admin.idusuario} - {admin.email}: {e}")
+        raise HTTPException(status_code=500, detail="Error al crear técnica")

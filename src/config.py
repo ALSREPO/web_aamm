@@ -42,3 +42,5 @@ SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
 ORDEN_LISTADO_TECNICAS = os.environ.get("ORDEN_LISTADO_TECNICAS", "fecha")
 NUMERO_TECNICAS_POR_PAGINA = int(os.environ.get("NUMERO_TECNICAS_POR_PAGINA", 12))
 SENTIDO_ORDEN_LISTADO_TECNICAS = os.environ.get("SENTIDO_ORDEN_LISTADO_TECNICAS", "desc")
+
+RUTA_VIDEOS = os.environ.get("RUTA_VIDEOS", "/src/static/videos")

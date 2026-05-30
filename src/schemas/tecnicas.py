@@ -47,3 +47,15 @@ class PaginaTecnicas(BaseModel):
 
     class Config:
         from_attributes = True
+
+# crear nuevas técnicas
+class TecnicaCreate(BaseModel):
+    nombre: str
+    descripcion: str
+    fecha: date
+    disciplinas_ids: List[int] = []
+    etiquetas_ids: List[int] = []
+    videos_nombres: List[str] = [] # Ejemplo: ["patada1.mp4", "detalle_giro.mp4"]
+
+    class Config:
+        from_attributes = True
