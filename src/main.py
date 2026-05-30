@@ -66,6 +66,9 @@ app.include_router(frontEnd.router)
 from src.routers import tecnicas
 app.include_router(tecnicas.router)
 
+from src.routers import videos
+app.include_router(videos.router)
+
 
 if __name__ == "__main__":
     import uvicorn
