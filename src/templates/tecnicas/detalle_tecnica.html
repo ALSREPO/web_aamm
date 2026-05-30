@@ -4,6 +4,8 @@
 
 {% block content %}
 <div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Enlace para volver al listado de técnicas -->
     <a href="/" class="inline-flex items-center text-slate-500 hover:text-blue-600 mb-6 transition">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
@@ -25,6 +27,22 @@
 				<div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
 					<h2 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Descripción</h2>
 					<p id="desc-tecnica" class="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line"></p>
+				</div>
+			</div>
+
+            <!-- Mostrar las disciplinas y etiquetas -->
+            <div class="space-y-6">
+				<div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+					<div class="space-y-6">
+						<div>
+							<span class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Disciplinas</span>
+							<div id="disciplinas-detalle" class="flex flex-wrap gap-2"></div>
+						</div>
+						<div>
+							<span class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Etiquetas</span>
+							<div id="etiquetas-detalle" class="flex flex-wrap gap-2"></div>
+						</div>
+					</div>
 				</div>
 			</div>
 
@@ -55,10 +73,26 @@
             document.getElementById('titulo-tecnica').innerText = t.nombre;
             document.getElementById('desc-tecnica').innerText = t.descripcion;
             // document.getElementById('fecha-tecnica').innerText = new Date(t.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
-			const fechaFormateada = new Date(t.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+			
+            const fechaFormateada = new Date(t.fecha).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 			document.getElementById('fecha-tecnica').innerHTML = `
 				<a href="/?fecha=${t.fecha}" class="hover:text-blue-600 transition">${fechaFormateada}</a>
 			`;
+
+            // Rellenar Disciplinas y Etiquetas (estilo badges)
+            document.getElementById('disciplinas-detalle').innerHTML = t.disciplinas.map(d => `
+				<a href="/?disciplina_id=${d.iddisciplina}" 
+				   class="bg-slate-900 text-white text-[10px] px-2 py-1 rounded-md font-bold uppercase hover:bg-blue-600 transition">
+				   ${d.disciplina}
+				</a>
+			`).join('');
+
+			document.getElementById('etiquetas-detalle').innerHTML = t.etiquetas.map(e => `
+				<a href="/?etiqueta_id=${e.idetiqueta}" 
+				   class="text-blue-600 dark:text-blue-400 text-[10px] font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-1 rounded border border-blue-100 dark:border-blue-800 hover:border-blue-500 transition">
+				   #${e.etiqueta}
+				</a>
+			`).join('');
 
             document.getElementById('detalle-contenedor').classList.remove('hidden');
 
