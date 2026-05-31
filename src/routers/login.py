@@ -10,9 +10,6 @@ from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 from src.config import ACCESS_TOKEN_COOKIE_MAX_AGE
 
-max_age_segundos = int(os.getenv("ACCESS_TOKEN_COOKIE_MAX_AGE", 3600))
-# Calculamos la fecha exacta de expiración usando ese número
-fecha_expiracion = datetime.now(timezone.utc) + timedelta(seconds=max_age_segundos)
 
 # 1. El router para tus rutas normales
 router = APIRouter(
@@ -32,6 +29,9 @@ logger = logging.getLogger("AAMM-APP-login")
 # /logout
 # /registro
 # /usuarios/{idusuario}/activar
+
+import os
+from datetime import datetime, timedelta, timezone
 
 @router.post("/login")
 def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_read_db)):
@@ -62,16 +62,21 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
             detail="Tu cuenta está verificada, pero un administrador debe activarla manualmente."
         )
     
-    # 5. Crear el Token
-    access_token = crear_token_acceso(data={"sub": db_user.email})
+    # Configuramos la expiración de la cookie y del JWT usando el mismo valor del fichero de configuración.
+    # CALCULOS DE TIEMPO (Colocados aquí dentro para que se ejecuten en cada login real)
+    max_age_segundos = int(os.getenv("ACCESS_TOKEN_COOKIE_MAX_AGE", 2678400)) 
+    fecha_final = datetime.now(timezone.utc) + timedelta(seconds=max_age_segundos)
+
+    # 5. Crear el Token (Le pasamos 'fecha_final' a nuestro nuevo parámetro 'expires_at')
+    access_token = crear_token_acceso(data={"sub": db_user.email}, expires_at=fecha_final)
     
-    # 6. CREAR LA COOKIE (Lo nuevo)
+    # 6. CREAR LA COOKIE
     response.set_cookie(
         key="access_token", 
         value=access_token, 
         httponly=True,   # No accesible desde JS
         max_age=max_age_segundos,
-        expires=fecha_expiracion, 
+        expires=fecha_final, 
         samesite="lax",  # Protección CSRF básica
         secure=False     # Cambiar a True cuando tengas HTTPS/SSL
     )
@@ -144,7 +149,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
             <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
                 <h1 style="color: #ef4444;">⚠️ Enlace inválido o caducado</h1>
                 <p>El enlace de verificación no es válido o ha expirado (24h). Por favor, intenta registrarte de nuevo.</p>
-                <a href="/registro">Volver al registro</a>
+                <a href="/registro" style="background: #475569; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Volver al registro</a>
             </body>
         </html>
         """
@@ -170,7 +175,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
     return f"""
     <html>
         <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-            <h1 style="color: #10b981;">✅ {mensaje}</h1>
+            <h1 style="color: #2563eb;">✅ {mensaje}</h1>
             <p>Ahora un administrador debe activar tu cuenta manualmente para que puedas acceder.</p>
             <br>
             <a href="/login" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Ir al Login</a>

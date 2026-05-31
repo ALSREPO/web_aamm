@@ -118,3 +118,19 @@ async def pagina_admin_tecnica(
         "user": user, 
         "idtecnica": idtecnica # Lo pasamos a la plantilla
     })
+
+########################
+# Crear y Editar las Disciplinas y Etiquetas
+
+@router.get("/admin/tablas-bbdd", response_class=HTMLResponse)
+async def pagina_admin_tablas(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    if not user or user.activo < 2:
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse("tecnicas/admin_tablas_bbdd.html", {"request": request, "user": user})
+
+
+########################
+# Página "Acerca de"
+@router.get("/acerca-de", response_class=HTMLResponse)
+def pagina_acerca_de(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    return templates.TemplateResponse("acerca_de.html", {"request": request, "user": user})
