@@ -45,3 +45,7 @@ SENTIDO_ORDEN_LISTADO_TECNICAS = os.environ.get("SENTIDO_ORDEN_LISTADO_TECNICAS"
 
 RUTA_VIDEOS = os.environ.get("RUTA_VIDEOS", "/src/static/videos")
 TAMANYO_MAXIMO_SUBIDA_VIDEOS = int(os.environ.get("TAMANYO_MAXIMO_SUBIDA_VIDEOS", 300)) # en MB
+
+# 6. Configuración para Telegram Bot
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID")
