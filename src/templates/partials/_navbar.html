@@ -10,7 +10,7 @@
                     
                     <div class="hidden md:flex items-center gap-6">
                         {% if user and user.activo >= 2 %}
-                        
+
                         <!-- Menú de Administración -->
                         <div class="relative group">
                             <button class="flex items-center gap-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 px-4 py-2 rounded-xl font-bold text-sm transition text-slate-700 dark:text-slate-200">
@@ -48,9 +48,19 @@
                         </div>
                         {% endif %}
 
+                        <!-- Botón de cambio de tema (modo oscuro/claro) para escritorio -->
                         <button id="theme-toggle" class="p-2 rounded-xl bg-slate-50 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors text-lg">
                             <span id="theme-toggle-dark-icon" class="hidden">🌙</span>
                             <span id="theme-toggle-light-icon" class="hidden">☀️</span>
+                        </button>
+                    </div>
+
+                    <!-- Barra de navegación para moviles -->
+                    <div class="md:hidden flex items-center gap-3">
+                        <!-- Botón de cambio de tema (modo oscuro/claro) para moviles -->
+                        <button id="theme-toggle-mobile" class="p-2 rounded-xl bg-slate-50 dark:bg-slate-700 text-lg">
+                            <span class="dark-icon-m hidden">🌙</span>
+                            <span class="light-icon-m hidden">☀️</span>
                         </button>
                     </div>
                     
