@@ -149,7 +149,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
             <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
                 <h1 style="color: #ef4444;">⚠️ Enlace inválido o caducado</h1>
                 <p>El enlace de verificación no es válido o ha expirado (24h). Por favor, intenta registrarte de nuevo.</p>
-                <a href="/registro">Volver al registro</a>
+                <a href="/registro" style="background: #475569; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Volver al registro</a>
             </body>
         </html>
         """
@@ -175,7 +175,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
     return f"""
     <html>
         <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-            <h1 style="color: #10b981;">✅ {mensaje}</h1>
+            <h1 style="color: #2563eb;">✅ {mensaje}</h1>
             <p>Ahora un administrador debe activar tu cuenta manualmente para que puedas acceder.</p>
             <br>
             <a href="/login" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Ir al Login</a>

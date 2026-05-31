@@ -115,7 +115,7 @@ def enviar_correo_verificacion(email_destino: str, token: str):
         <h2 style="color: #333;">¡Bienvenido a la web de Artes Marciales!</h2>
         <p>Para terminar tu registro, por favor confirma tu dirección de correo electrónico pulsando el siguiente botón:</p>
         <div style="text-align: center; margin: 30px 0;">
-            <a href="{enlace}" style="background-color: #10b981; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verificar Correo</a>
+            <a href="{enlace}" style="background-color: #1f54de; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verificar Correo</a>
         </div>
         <p style="font-size: 12px; color: #666;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{enlace}</p>
         <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
