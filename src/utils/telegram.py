@@ -65,3 +65,62 @@ def enviar_solicitud_registro_telegram(email: str, nombre: str):
         requests.post(url, json=payload, timeout=5)
     except Exception as e:
         logger.error(f"Error al enviar botones a Telegram: {e}")
+
+
+# Incluir en el bot de Telegram un manejador para los callbacks de los botones (Aprobar/Denegar) que actualice la base de datos y edite el mensaje original para reflejar la acción tomada. Esto se hace en el script del bot, no en FastAPI, pero es crucial para cerrar el ciclo de interacción.
+"""
+# MANEJADOR PARA LOS BOTONES INTERACTIVOS (Aprobar / Denegar)
+@bot.callback_query_handler(func=lambda call: call.data.startswith(('aprobar:', 'denegar:')))
+def callback_gestion_usuarios(call):
+    
+    cid = call.from_user.id
+    # 1. Comprobar que quien pulsa el botón es el administrador real
+    # Cambia CHAT_ID_ADMIN por tu variable de ID de administrador
+    if not es_admin(cid, False):
+        return
+
+    # 2. Extraer la acción y el email del callback_data
+    accion, email = call.data.split(":", 1)
+    
+    # 3. Conectamos a la base de datos de tu proyecto FastAPI actual
+    # NOTA: Adapta "obtener_conexion_fastapi()" a cómo te conectes en tu script del bot
+    try:
+        with obtener_conexion() as db:
+            with db.cursor() as cursor:
+                if accion == "aprobar":
+                    # Cambiamos activo a True (o 1) buscando por email
+                    cursor.execute("UPDATE ta_usuarios SET activo = 1 WHERE email = %s", (email,))
+                    db.commit()
+                    
+                    texto_editado = f"✅ *Cuenta Activada Exitosamente*\n📧 Correo: `{email}`\n\n_Acción procesada por el Administrador._"
+                    alerta_pop_up = "Usuario aprobado con éxito"
+                    print(f"Se aprueba la solicitud de {email}")
+                    
+                elif accion == "denegar":
+                    # Si se deniega, podemos optar por borrarlo o dejarlo inactivo (activo=False)
+                    # En este ejemplo lo dejamos Inactivo permanentemente
+                    cursor.execute("UPDATE ta_usuarios SET activo = -1 WHERE email = %s", (email,))
+                    db.commit()
+                    
+                    texto_editado = f"❌ *Cuenta Denegada/Bloqueada*\n📧 Correo: `{email}`\n\n_Acción procesada por el Administrador._"
+                    alerta_pop_up = "Usuario rechazado"
+                    print(f"Se rechaza la solicitud de {email}")
+
+        # 4. Modificar el mensaje original en Telegram para quitar los botones 
+        # y dejar constancia de que ya se ha pulsado. ¡Evita que se pulse dos veces!
+        bot.edit_message_text(
+            chat_id=call.message.chat.id,
+            message_id=call.message.id,
+            text=texto_editado,
+            parse_mode="Markdown",
+            reply_markup=None # Quitamos los botones
+        )
+        
+        # 5. Notificación flotante rápida en la pantalla de Telegram del administrador
+        bot.answer_callback_query(call.id, alerta_pop_up)
+
+    except Exception as e:
+        print(f"Error en BBDD al procesar Telegram Callback: {e}")
+        bot.answer_callback_query(call.id, "❌ Error interno en la Base de Datos", show_alert=True)
+
+"""
