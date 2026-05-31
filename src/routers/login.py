@@ -6,10 +6,10 @@ from sqlalchemy.orm import Session
 from datetime import date, datetime, timedelta, timezone
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, verificar_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin, usuario_obligatorio
+from src.utils.telegram import enviar_solicitud_registro_telegram
 from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 from src.config import ACCESS_TOKEN_COOKIE_MAX_AGE
-
 
 # 1. El router para tus rutas normales
 router = APIRouter(
@@ -169,6 +169,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
         usuario.email_verificado = True
         db.commit()
         logger.info(f"Correo verificado para {usuario.idusuario} - {usuario.email}")
+        enviar_solicitud_registro_telegram(usuario.email, usuario.nombre)
         mensaje = "¡Gracias! Tu correo ha sido verificado correctamente."
 
     # 4. Respuesta visual para el usuario
