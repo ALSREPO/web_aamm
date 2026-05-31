@@ -1,5 +1,6 @@
 import logging
 from logging.handlers import RotatingFileHandler
+from src.config import LOG_TAMANO_FICHERO, LOG_NUM_FICHEROS_RESPALDO
 import os
 import contextvars
 
@@ -39,8 +40,8 @@ def configurar_logs(log_level: str = "INFO"):
     # --- HANDLER 2: ARCHIVO (Rotativo) ---
     file_handler = RotatingFileHandler(
         'logs/aamm_ejecucion.log', 
-        maxBytes=5*1024*1024,  # 5 MB por archivo
-        backupCount=3,         # Mantiene el actual y hasta 3 copias viejas (.log.1, .log.2...)
+        maxBytes=LOG_TAMANO_FICHERO*1024*1024,  # 5 MB por archivo
+        backupCount=LOG_NUM_FICHEROS_RESPALDO,         # Mantiene el actual y hasta 3 copias viejas (.log.1, .log.2...)
         encoding='utf-8'
     )
     file_handler.addFilter(IPInjectFilter())
