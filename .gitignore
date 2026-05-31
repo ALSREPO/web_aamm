@@ -6,7 +6,7 @@ __pycache__/
 *.pyc
 
 # Archivos temporales o generados
-static/
+src/static/videos/
 log/
 *.log
 *.old

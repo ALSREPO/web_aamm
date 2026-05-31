@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es" class="dark">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Web AAMM - {% block title %}{% endblock %}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <!-- Configuración de Tailwind para modo oscuro y colores personalizados -->
+        <script>
+            // Configuración de colores Slate para Tailwind
+            tailwind.config = {
+                darkMode: 'class',
+                theme: {
+                    extend: {
+                        colors: {
+                            primary: '#0f172a', // Slate 900
+                        }
+                    }
+                }
+            }
+        </script>
+    </head>
+
+
+    <body class="bg-slate-200 dark:bg-slate-900 text-slate-700 dark:text-slate-100 min-h-screen flex flex-col">
+        <!-- Barra superior de navegación -->
+{% include "partials/_navbar.html" %}
+
+        <!-- Contenido principal -->
+        <main class="flex-grow container mx-auto px-4 py-8">
+{% block content %}{% endblock %}
+        </main>
+
+        <!-- Footer -->
+{% include "partials/_footer.html" %}
+    </body>
+</html>

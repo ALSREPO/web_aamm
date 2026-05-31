@@ -27,4 +27,21 @@ LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 # 3. Configuración del token (JWT)
 SECRET_KEY = os.environ.get("SECRET_KEY")
 ALGORITHM = os.environ.get("ALGORITHM", "HS256")
-ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("ACCESS_TOKEN_EXPIRE_MINUTES", 60))
+ACCESS_TOKEN_COOKIE_MAX_AGE = int(os.environ.get("ACCESS_TOKEN_COOKIE_MAX_AGE", 60))
+
+# 4. Configuración de correo (Dinámica)
+EMAIL_EMISOR = os.environ.get("EMAIL_EMISOR")
+BASE_URL = os.environ.get("BASE_URL")
+
+SMTP_SERVER = os.environ.get("SMTP_SERVER")
+SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+SMTP_USERNAME = os.environ.get("SMTP_USERNAME")
+SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD")
+
+# 5. Configuración para el listado de técnicas
+ORDEN_LISTADO_TECNICAS = os.environ.get("ORDEN_LISTADO_TECNICAS", "fecha")
+NUMERO_TECNICAS_POR_PAGINA = int(os.environ.get("NUMERO_TECNICAS_POR_PAGINA", 12))
+SENTIDO_ORDEN_LISTADO_TECNICAS = os.environ.get("SENTIDO_ORDEN_LISTADO_TECNICAS", "desc")
+
+RUTA_VIDEOS = os.environ.get("RUTA_VIDEOS", "/src/static/videos")
+TAMANYO_MAXIMO_SUBIDA_VIDEOS = int(os.environ.get("TAMANYO_MAXIMO_SUBIDA_VIDEOS", 300)) # en MB

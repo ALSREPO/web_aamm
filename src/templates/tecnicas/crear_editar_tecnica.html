@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Crear/Editar Técnica{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto px-4 py-8">
+
+    <!-- Título y enlace para deshacer -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white">Nueva Técnica</h1>
+        <a href="/" class="text-slate-500 hover:text-blue-600 transition text-sm font-medium">Cancelar y volver</a>
+    </div>
+
+    <!-- Formulario para crear/editar técnica -->
+    <form id="form-tecnica" class="space-y-8">
+
+        <!-- Nombre, fecha y descripción -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700 space-y-4">
+            <div>
+                <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Nombre de la técnica</label>
+                <input type="text" id="nombre" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Fecha</label>
+                    <input type="date" id="fecha" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Descripción</label>
+                <textarea id="descripcion" rows="5" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition"></textarea>
+            </div>
+        </div>
+
+        <!-- Disciplinas y etiquetas -->
+        <div class="flex flex-col gap-6">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+                <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-3">Disciplinas</label>
+                <div id="container-disciplinas" class="flex flex-wrap gap-2">
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+                <label class="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Etiquetas</label>
+                <div id="container-etiquetas" class="min-h-[8rem] h-32 resize-y overflow-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 flex flex-wrap gap-2 content-start">
+                </div>
+            </div>
+        </div>
+
+        <!-- Vídeos -->
+        <div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+			<div class="flex justify-between items-center mb-4">
+				<label class="block text-xs font-black text-slate-400 uppercase tracking-widest">Vídeos relacionados</label>
+				
+				<input type="file" id="input-subir-archivo" class="hidden" accept="video/*">
+				<button type="button" onclick="document.getElementById('input-subir-archivo').click()" 
+					class="text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1 transition">
+					<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+						<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+					</svg>
+					Subir nuevo vídeo
+				</button>
+			</div>
+
+			<div id="progreso-subida-container" class="hidden mb-4">
+				<div class="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
+					<div id="barra-progreso" class="bg-blue-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+				</div>
+				<p id="texto-progreso" class="text-[10px] text-slate-500 mt-1 font-bold uppercase"></p>
+			</div>
+
+			<div class="relative mb-4">
+				<input type="text" id="busqueda-video" placeholder="Escribe para buscar en el servidor..." 
+					class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none transition">
+				<div id="sugerencias-videos" class="absolute z-10 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl shadow-xl max-h-48 overflow-y-auto hidden"></div>
+			</div>
+
+			<div id="videos-seleccionados" class="flex flex-wrap gap-2"></div>
+		</div>
+
+        <button type="submit" class="w-full bg-blue-600 text-white font-black py-4 rounded-2xl hover:bg-blue-700 shadow-lg shadow-blue-200 dark:shadow-none transition transform hover:-translate-y-1">
+            Guardar Técnica
+        </button>
+    </form>
+</div>
+
+<script src="/static/js/tecnicas/crear_editar_tecnica.js" defer></script>
+{% endblock %}

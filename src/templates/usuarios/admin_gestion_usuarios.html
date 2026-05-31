@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Gestión Usuarios{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto px-4 py-8">
+    <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white mb-8">Gestión de Usuarios</h1>
+
+    <div class="bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 overflow-x-auto shadow-sm">
+        <table class="w-full text-left border-collapse min-w-[700px]"> <thead>
+                <tr class="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-700">
+                    <th onclick="ordenarUsuarios('nombre')"           class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:text-blue-600 transition">Usuario / Email ↑↓</th>
+                    <th onclick="ordenarUsuarios('email_verificado')" class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:text-blue-600 transition text-center">Mail Verif. ↑↓</th>
+                    <th onclick="ordenarUsuarios('activo')"           class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase cursor-pointer hover:text-blue-600 transition">Estado ↑↓</th>
+                    <th class="px-6 py-4 text-[10px] font-black text-slate-400 uppercase text-center">Acciones de Nivel</th>
+                </tr>
+            </thead>
+
+            <tbody id="tabla-usuarios" class="divide-y divide-slate-50 dark:divide-slate-700">
+                </tbody>
+        </table>
+    </div>
+</div>
+
+<script src="/static/js/usuarios/admin_gestion_usuarios.js" defer></script>
+{% endblock %}

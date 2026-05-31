@@ -1,6 +1,142 @@
+{% extends "base.html" %}
+
 <script>
 //////////////////////////////////
 // INICIO: index.html, listado de técnicas
-
 </script>
 
+
+{% block title %}Biblioteca de Técnicas{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    
+    <div class="flex flex-col md:flex-row justify-between items-center md:items-center text-center md:text-left gap-6 mb-8 w-full">
+        <div class="flex flex-col items-center md:items-start">
+            <h1 class="text-3xl font-extrabold text-slate-900 dark:text-white tracking-tight">
+                Web<span class="text-blue-500 group-hover:text-blue-400">AAMM</span>
+            </h1>
+            <p class="text-slate-500 dark:text-slate-400 mt-1">Explora y filtra la biblioteca de conocimientos.</p>
+        </div>
+        
+        <!-- Botón para crear nueva técnica, solo visible para admins -->
+        {% if user.activo >= 2 %}
+        <button onclick="location.href='/admin/tecnica'" 
+            class="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 w-full sm:w-auto">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Nueva Técnica</span>
+        </button>
+        {% endif %}
+    </div>
+
+
+        <!-- contenedor para limpiar filtros-->
+    <div id="status-filtros" class="hidden mb-6 flex flex-col md:flex-row items-center justify-center md:justify-between text-center md:text-left bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg border border-blue-100 dark:border-blue-800 gap-3 md:gap-0">
+        <span id="texto-filtro" class="text-blue-700 dark:text-blue-300 text-sm font-medium"></span>
+        <button onclick="limpiarFiltros()" class="text-blue-700 dark:text-blue-300 hover:underline text-sm font-bold">
+            Limpiar todos los filtros
+        </button>
+    </div>
+
+
+    <!-- ocultar/mostrar buscador -->
+    <div class="mb-4 flex justify-center md:justify-end">
+        <button onclick="toggleBuscador()" class="text-sm font-bold text-slate-600 dark:text-slate-400 flex items-center justify-center gap-2 hover:text-blue-600 transition">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <span id="btn-buscador-texto">Mostrar Buscador</span>
+        </button>
+    </div>
+
+    <!-- Formulario de búsqueda
+        se puede filtrar por:
+            - texto
+            - fecha
+            - disciplinas
+            - etiquetas
+        se puede ordenar por:
+            - Fecha
+            - Nombre
+            - ID
+    -->
+	<div id="panel-buscador" class="hidden mb-8 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
+		<form id="form-busqueda" class="space-y-4">
+			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+				<div class="md:col-span-2">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Palabra clave</label>
+					<input type="text" id="input-q" placeholder="Ej: 'llave de brazo', 'proyección'..." 
+						class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+				</div>
+				
+				<div class="md:col-span-1">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha exacta</label>
+					<input type="date" id="input-fecha" 
+						class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+				</div>
+	
+				
+				<div class="md:col-span-1">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Orden</label>
+					<div class="flex gap-2">
+						<select id="select-orden" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none text-sm">
+							<option value="fecha">Fecha</option>
+							<option value="nombre">Nombre</option>
+							<option value="id">ID</option>
+						</select>
+						<button type="button" onclick="toggleSentido()" id="btn-sentido" title="Cambiar orden"
+							class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 rounded-lg hover:bg-slate-100 transition">
+							<span id="icon-sentido">↓</span>
+						</button>
+						<input type="hidden" id="input-sentido" value="desc">
+					</div>
+				</div>
+
+			</div>
+
+			<div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+				<div class="md:col-span-1">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Disciplinas</label>
+					<div id="container-disciplinas" class="flex flex-wrap gap-2">
+						</div>
+				</div>
+				
+				<div class="md:col-span-4">
+					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Etiquetas</label>
+					<div id="container-etiquetas" class="min-h-[8rem] h-32 resize-y overflow-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-2 flex flex-wrap gap-2 content-start">
+                    </div>
+				</div>
+			</div>
+
+            <!-- Botones de aplicar filtros y limpiar filtros -->
+            <div class="flex justify-center md:justify-end gap-2 pt-2 w-full">
+                <button type="button" onclick="limpiarFiltros()" class="px-4 py-2 text-sm font-bold text-slate-500 w-1/2 sm:w-auto">
+                    Limpiar
+                </button>
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg font-bold hover:bg-blue-700 transition w-1/2 sm:w-auto">
+                    Aplicar Filtros
+                </button>
+            </div>
+		</form>
+	</div>
+    <!-- fin formulario de busqueda -->
+
+    <!-- Contenedor para las tarjetas de técnicas -->
+    <div id="grid-tecnicas" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <div class="col-span-full py-20 text-center">
+            <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p class="text-slate-500">Cargando biblioteca...</p>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    // Creamos variables globales en la ventana (window) para que el JS externo las lea
+    window.CONFIG_LIMIT = {{ NUMERO_TECNICAS_POR_PAGINA }};
+    window.CONFIG_USER_ROLE = {{ user.activo if user else 0 }}; // Controlamos si no hay usuario
+</script>
+<script src="/static/js/tecnicas/tecnicas_listado_buscador.js" defer></script>
+{% endblock %}

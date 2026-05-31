@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+
+{% block title %}Detalle Técnica{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto px-4 py-8">
+
+    <!-- Enlace para volver al listado de técnicas -->
+    <a href="/" class="inline-flex items-center text-slate-500 hover:text-blue-600 mb-6 transition">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Volver al listado
+    </a>
+
+    <div id="detalle-contenedor" class="hidden">
+        <!-- Título y fecha -->
+		<div class="mb-6">
+			<h1 id="titulo-tecnica" class="text-3xl md:text-4xl font-extrabold text-slate-900 dark:text-white mb-2"></h1>
+			<div id="fecha-tecnica" class="text-sm text-slate-500 font-medium"></div>
+		</div>
+
+		<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+			<div class="lg:col-span-2 space-y-6">
+
+                <!-- video -->
+                 <div id="wrapper-video" class="hidden space-y-6">
+					<!-- VIDEO EN HORIZONTAL, SI EL VIDEO ES VERTICAL, SE VE CON BLOQUES NEGROS A LOS LADOS
+					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video flex items-center justify-center">
+						<video id="main-video" controls class="w-full h-full" src=""></video>
+					</div>
+					-->
+					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center max-h-[70vh] w-full">
+						<video id="main-video" controls class="max-w-full max-h-[70vh] w-auto h-auto" src=""></video>
+					</div>
+					<div id="lista-videos" class="flex gap-4 overflow-x-auto pb-2"></div>
+				</div>
+
+                <!-- descripción -->
+				<div class="bg-white dark:bg-slate-800 p-8 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+					<h2 class="text-xs font-black text-blue-600 uppercase tracking-widest mb-2">Descripción</h2>
+					<p id="desc-tecnica" class="text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line"></p>
+				</div>
+			</div>
+
+            <!-- Mostrar las disciplinas y etiquetas -->
+            <div class="space-y-6">
+				<div class="bg-white dark:bg-slate-800 p-6 rounded-3xl shadow-sm border border-slate-100 dark:border-slate-700">
+					<div class="space-y-6">
+						<div>
+							<span class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Disciplinas</span>
+							<div id="disciplinas-detalle" class="flex flex-wrap gap-2"></div>
+						</div>
+						<div>
+							<span class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Etiquetas</span>
+							<div id="etiquetas-detalle" class="flex flex-wrap gap-2"></div>
+						</div>
+					</div>
+
+                    <!-- Botones de edición y eliminación solo para administradores -->
+                    {% if user.activo >= 2 %}
+					<div class="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 space-y-3">
+						<button onclick="location.href='/admin/tecnica?idtecnica={{ idtecnica }}'" 
+							class="w-full bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white font-bold py-3 rounded-xl hover:bg-blue-600 hover:text-white transition">
+							Editar Técnica
+						</button>
+						
+						<button onclick="confirmarBorrado({{ idtecnica }})" 
+							class="w-full bg-red-50 text-red-600 font-bold py-3 rounded-xl hover:bg-red-600 hover:text-white transition">
+							Eliminar
+						</button>
+					</div>
+					{% endif %}
+
+				</div>
+			</div>
+
+		</div>
+	</div>
+
+</div>
+
+<script>
+    // Creamos variables globales en la ventana (window) para que el JS externo las lea
+    window.DETALLE_ID_TECNICA = {{ idtecnica }};
+</script>
+
+<script src="/static/js/tecnicas/detalle_tecnica.js" defer></script>
+{% endblock %}
