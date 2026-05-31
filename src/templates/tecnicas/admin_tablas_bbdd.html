@@ -41,9 +41,29 @@
                 </div>
             </div>
         </details>
+
+        <!-- Sección de Gestión de Almacenamiento de Vídeo -->
+        <details class="group bg-white dark:bg-slate-800 rounded-3xl border border-slate-100 dark:border-slate-700 shadow-sm">
+            <summary class="flex justify-between items-center p-6 cursor-pointer list-none">
+                <div class="flex items-center gap-3">
+                    <span class="text-xl font-bold text-slate-800 dark:text-white">Almacenamiento de Vídeo</span>
+                    <span id="badge-huerfanos" class="hidden text-xs font-bold px-2 py-1 bg-amber-100 text-amber-700 rounded-lg animate-pulse"></span>
+                </div>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transition-transform group-open:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </summary>
+            
+            <div class="p-6 pt-0">
+                <div id="stats-auditoria" class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8"></div>
+                
+                <h3 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4">Archivos huérfanos (sin técnica asignada)</h3>
+                <div id="lista-huerfanos" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
+            </div>
+        </details>
+
     </div>
 </div>
-
 
 <script src="/static/js/tecnicas/admin_tablas_bbdd.js" defer></script>
 {% endblock %}
