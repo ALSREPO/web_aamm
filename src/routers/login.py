@@ -1,12 +1,18 @@
+import os
 from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
 from fastapi.responses import HTMLResponse
 
 from sqlalchemy.orm import Session
-from datetime import date
+from datetime import date, datetime, timedelta, timezone
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_password, crear_token_acceso, crear_token_verificacion, verificar_token_verificacion, obtener_password_hash, enviar_correo_verificacion, verificar_admin, usuario_obligatorio
 from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
+from src.config import ACCESS_TOKEN_COOKIE_MAX_AGE
+
+max_age_segundos = int(os.getenv("ACCESS_TOKEN_COOKIE_MAX_AGE", 3600))
+# Calculamos la fecha exacta de expiración usando ese número
+fecha_expiracion = datetime.now(timezone.utc) + timedelta(seconds=max_age_segundos)
 
 # 1. El router para tus rutas normales
 router = APIRouter(
@@ -64,8 +70,8 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
         key="access_token", 
         value=access_token, 
         httponly=True,   # No accesible desde JS
-        max_age=3600,    # 1 hora de duración
-        expires=3600, 
+        max_age=max_age_segundos,
+        expires=fecha_expiracion, 
         samesite="lax",  # Protección CSRF básica
         secure=False     # Cambiar a True cuando tengas HTTPS/SSL
     )
