@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, Response
 from sqlalchemy.orm import Session
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_admin, usuario_obligatorio, verificar_password, obtener_password_hash
@@ -16,6 +16,7 @@ logger = logging.getLogger("AAMM-APP-usuarios")
 # /cambiar-password
 # /cambiar-password/{idusuario}
 # /eliminar-usuario/{idusuario}
+# /eliminar-mi-cuenta
 ########################################
 
 @router.get("/listado-completo", dependencies=[Depends(verificar_admin)])
@@ -102,3 +103,33 @@ def eliminar_usuario(idusuario: int, db: Session = Depends(get_write_db), admin:
         raise HTTPException(status_code=500, detail="Error al eliminar el usuario")
 
     return {"ok": True, "message": "Usuario eliminado permanentemente"}
+
+
+@router.delete("/eliminar-mi-cuenta")
+def eliminar_mi_cuenta(
+    response: Response, 
+    db: Session = Depends(get_write_db), 
+    usuario: Usuario = Depends(usuario_obligatorio)
+):
+    """Permite al usuario logueado borrar su propia cuenta permanentemente"""
+    # 1. Buscamos al usuario en la base de datos
+    db_user = db.query(Usuario).filter(Usuario.idusuario == usuario.idusuario).first()
+    
+    if not db_user:
+        logger.warning(f"Intento de auto-eliminación de cuenta no encontrada: ID {usuario.idusuario}")
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+
+    try:
+        # 2. Lo eliminamos de la Base de Datos
+        db.delete(db_user)
+        db.commit()
+        logger.info(f"El usuario eliminó su propia cuenta de forma permanente: {db_user.idusuario} - {db_user.email}")
+        
+        # 3. Limpiamos la cookie de sesión del navegador para desloguearlo
+        response.delete_cookie(key="access_token")
+        
+    except Exception as e:
+        logger.error(f"Error al auto-eliminar la cuenta del usuario {db_user.idusuario}: {e}")
+        raise HTTPException(status_code=500, detail="Error interno al eliminar la cuenta")
+
+    return {"ok": True, "message": "Tu cuenta ha sido eliminada permanentemente"}

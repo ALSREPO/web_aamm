@@ -19,7 +19,7 @@
 
         <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Cambiar Contraseña</h2>
 
-
+		<!-- Formulario para cambiar la contraseña -->
 		<form id="form-password" class="space-y-4">
 			<div>
 				<label class="block text-xs font-black text-slate-400 uppercase mb-2">Contraseña Actual</label>
@@ -45,6 +45,24 @@
 				Actualizar Contraseña
 			</button>
 		</form>
+
+		<hr class="border-slate-100 dark:border-slate-700 my-8">
+
+		<!-- Zona de Peligro: eliminar cuenta de forma permanente -->
+		<div class="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/30 dark:bg-red-950/10 p-5">
+            <h3 class="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2 text-center">Zona de Peligro</h3>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+                Una vez que elimines tu cuenta, no habrá marcha atrás. Se borrarán de manera permanente todos tus datos de acceso al servidor.
+            </p>
+            <!-- Contenedor flex para centrar el botón -->
+            <div class="flex justify-center mt-2">
+                <button id="btn-eliminar-cuenta" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-2.5 px-6 rounded-xl transition-colors">
+                    Eliminar mi cuenta permanentemente
+                </button>
+            </div>
+        </div>
+
+
 
 
     </div>
