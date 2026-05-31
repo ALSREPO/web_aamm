@@ -28,13 +28,19 @@ def obtener_password_hash(password):
     """Genera el hash SHA-512 de una contraseña"""
     return pwd_context.hash(password)
 
-def crear_token_acceso(data: dict, expires_delta: Optional[timedelta] = None):
-    """Genera un token JWT firmado"""
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+
+def crear_token_acceso(data: dict, expires_at: Optional[datetime] = None):
+    """Genera un token JWT firmado usando una fecha de expiración absoluta"""
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
+    
+    if expires_at:
+        # Si le pasamos la fecha final desde el login, la usamos directamente
+        expire = expires_at
     else:
-        expire = datetime.utcnow() + timedelta(minutes=15)
+        # Por si acaso se llama desde otro sitio sin fecha, le damos 15 minutos por defecto
+        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
         
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

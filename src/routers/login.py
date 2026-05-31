@@ -10,9 +10,6 @@ from src.models.models import Usuario
 from src.schemas.autenticacion import UsuarioLogin, UsuarioCreate, Mensaje
 from src.config import ACCESS_TOKEN_COOKIE_MAX_AGE
 
-max_age_segundos = int(os.getenv("ACCESS_TOKEN_COOKIE_MAX_AGE", 3600))
-# Calculamos la fecha exacta de expiración usando ese número
-fecha_expiracion = datetime.now(timezone.utc) + timedelta(seconds=max_age_segundos)
 
 # 1. El router para tus rutas normales
 router = APIRouter(
@@ -32,6 +29,9 @@ logger = logging.getLogger("AAMM-APP-login")
 # /logout
 # /registro
 # /usuarios/{idusuario}/activar
+
+import os
+from datetime import datetime, timedelta, timezone
 
 @router.post("/login")
 def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_read_db)):
@@ -62,16 +62,21 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
             detail="Tu cuenta está verificada, pero un administrador debe activarla manualmente."
         )
     
-    # 5. Crear el Token
-    access_token = crear_token_acceso(data={"sub": db_user.email})
+    # Configuramos la expiración de la cookie y del JWT usando el mismo valor del fichero de configuración.
+    # CALCULOS DE TIEMPO (Colocados aquí dentro para que se ejecuten en cada login real)
+    max_age_segundos = int(os.getenv("ACCESS_TOKEN_COOKIE_MAX_AGE", 2678400)) 
+    fecha_final = datetime.now(timezone.utc) + timedelta(seconds=max_age_segundos)
+
+    # 5. Crear el Token (Le pasamos 'fecha_final' a nuestro nuevo parámetro 'expires_at')
+    access_token = crear_token_acceso(data={"sub": db_user.email}, expires_at=fecha_final)
     
-    # 6. CREAR LA COOKIE (Lo nuevo)
+    # 6. CREAR LA COOKIE
     response.set_cookie(
         key="access_token", 
         value=access_token, 
         httponly=True,   # No accesible desde JS
         max_age=max_age_segundos,
-        expires=fecha_expiracion, 
+        expires=fecha_final, 
         samesite="lax",  # Protección CSRF básica
         secure=False     # Cambiar a True cuando tengas HTTPS/SSL
     )
