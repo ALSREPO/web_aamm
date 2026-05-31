@@ -63,6 +63,7 @@ def enviar_solicitud_registro_telegram(email: str, nombre: str):
 
     try:
         requests.post(url, json=payload, timeout=5)
+        logger.info(f"Solicitud de registro enviada a Telegram para: {nombre} - {email}")
     except Exception as e:
         logger.error(f"Error al enviar botones a Telegram: {e}")
 
