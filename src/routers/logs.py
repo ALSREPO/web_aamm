@@ -19,52 +19,65 @@ PATRON_ID = re.compile(r"(ID_USUARIO|ID_ADMIN)\[(\d+)\]")
 @router.get("/", dependencies=[Depends(verificar_admin)])
 async def ver_logs_traducidos(
     db: Session = Depends(get_read_db),
-    # Añadimos el parámetro con un valor por defecto de 500
     num_lineas: int = Query(default=500, ge=1, le=5000, alias="lineas")
 ):
+    # 1. Si no existe ni el fichero base, es que no hay logs
     if not os.path.exists(LOG_FILE_PATH):
-        return {"logs": ["El archivo de log aún no se ha creado."]}
+        return {"logs": ["El archivo de log aún no se ha creado."], "nombre_archivo": os.path.basename(LOG_FILE_PATH)}
 
-    # 1. OPTIMIZACIÓN: Traemos solo idusuario, email y nombre para no cargar objetos pesados en memoria
+    # 2. Traer usuarios optimizados para el mapa de traducción
     usuarios_db = db.query(Usuario).with_entities(Usuario.idusuario, Usuario.email, Usuario.nombre).all()
+    mapa_usuarios = {str(u.idusuario): {"email": u.email, "nombre": u.nombre} for u in usuarios_db}
 
-    # 2. Construimos el mapa guardando un diccionario por usuario
-    # Así tenemos accesibles tanto el email como el nombre por separado
-    mapa_usuarios = {
-        str(u.idusuario): {"email": u.email, "nombre": u.nombre} 
-        for u in usuarios_db
-    }
+    def traducir_coincidencia(match):
+        tipo_id = match.group(1)
+        id_num = match.group(2)
+        datos_usuario = mapa_usuarios.get(id_num)
+        if datos_usuario:
+            return f"{tipo_id}[{id_num} - {datos_usuario['nombre']} ({datos_usuario['email']})]"
+        return f"{tipo_id}[{id_num} - ELIMINADO]"
+
+    # 3. GENERAR LA LISTA DE ARCHIVOS EN ORDEN DE RECIENTE A ANTIGUO
+    # Buscaremos en: archivo.log, archivo.log.1, archivo.log.2, archivo.log.3
+    ficheros_a_revisar = [LOG_FILE_PATH]
+    for i in range(1, 4):
+        ruta_rotada = f"{LOG_FILE_PATH}.{i}"
+        if os.path.exists(ruta_rotada):
+            ficheros_a_revisar.append(ruta_rotada)
+
+    lineas_crudas = []
+
+    # 4. LEER EN CASCADA HASTA LLENAR EL CUPO PEDIDO
+    for ruta in ficheros_a_revisar:
+        # Si ya tenemos todas las líneas que nos ha pedido el frontend, paramos de leer archivos
+        if len(lineas_crudas) >= num_lineas:
+            break
+            
+        try:
+            with open(ruta, "r", encoding="utf-8") as f:
+                lineas_fichero = f.readlines()
+                
+                # Necesitamos saber cuántas líneas nos faltan para cumplir el cupo
+                cuantas_faltan = num_lineas - len(lineas_crudas)
+                
+                # Cogemos las últimas 'cuantas_faltan' líneas de este archivo
+                ultimas_del_fichero = lineas_fichero[-cuantas_faltan:]
+                
+                # Como leemos de más nuevo a más antiguo, las líneas de las rotaciones
+                # deben acumularse al FINAL de nuestra lista temporal
+                lineas_crudas.extend(ultimas_del_fichero)
+        except Exception as e:
+            # Si un archivo está bloqueado o da error de lectura, saltamos al siguiente
+            continue
+
+    # 5. INVERTIR Y TRADUCIR (Para que lo más NUEVO de todo salga arriba en la pantalla)
+    lineas_crudas.reverse()
 
     logs_traducidos = []
-
-    # 3. Función auxiliar que reemplazará el ID por: ID - Nombre (Email)
-    def traducir_coincidencia(match):
-        tipo_id = match.group(1)  # ID_USUARIO o ID_ADMIN
-        id_num = match.group(2)   # El número (ej: 24)
-        
-        # Buscamos en nuestro mapa de la BBDD.
-        datos_usuario = mapa_usuarios.get(id_num)
-        
-        if datos_usuario:
-            nombre = datos_usuario["nombre"]
-            email = datos_usuario["email"]
-            return f"{tipo_id}[{id_num} - {nombre} ({email})]"
-        else:
-            # Si no existe en el mapa, es que el registro fue eliminado físicamente de la BBDD
-            return f"{tipo_id}[{id_num} - ELIMINADO]"
-
-    # 4. Leer el archivo (últimas n líneas)
-    with open(LOG_FILE_PATH, "r", encoding="utf-8") as f:
-        lineas = f.readlines()[-num_lineas:]
-
-        # Opcional: Invertimos el orden para que lo más NUEVO salga arriba del todo en la web
-        lineas.reverse()
-        
-        for linea in lineas:
-            linea = linea.strip()
-            if linea:
-                # Aplicamos la traducción con la expresión regular
-                linea_traducida = PATRON_ID.sub(traducir_coincidencia, linea)
-                logs_traducidos.append(linea_traducida)
+    for linea in lineas_crudas:
+        linea = linea.strip()
+        if linea:
+            linea_traducida = PATRON_ID.sub(traducir_coincidencia, linea)
+            logs_traducidos.append(linea_traducida)
 
     return {"logs": logs_traducidos}
