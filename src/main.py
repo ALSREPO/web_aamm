@@ -75,6 +75,9 @@ app.include_router(tecnicas.router)
 from src.routers import videos
 app.include_router(videos.router)
 
+from src.routers import logs
+app.include_router(logs.router)
+
 
 if __name__ == "__main__":
     import uvicorn
