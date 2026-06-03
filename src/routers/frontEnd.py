@@ -7,7 +7,7 @@ from fastapi.templating import Jinja2Templates
 from typing import Optional
 
 from src.models.models import Usuario
-from src.config import NUMERO_TECNICAS_POR_PAGINA
+from src.config import NUMERO_TECNICAS_POR_PAGINA, LOG_FILE_PATH
 
 router = APIRouter(prefix="", tags=["FrontEnd"])
 
@@ -142,4 +142,4 @@ def pagina_acerca_de(request: Request, user: Usuario = Depends(obtener_usuario_a
 def pagina_logs(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     if not user or user.activo < 2:
         return RedirectResponse(url="/", status_code=303)
-    return templates.TemplateResponse("logs/admin_logs.html", {"request": request, "user": user})
+    return templates.TemplateResponse("logs/admin_logs.html", {"request": request, "user": user, "LOG_FILE_PATH": LOG_FILE_PATH.split("/")[-1]})

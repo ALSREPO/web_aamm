@@ -8,32 +8,69 @@
         debug: true
     };
 
-    async function cargarLogs() {
-        const contenedor = document.getElementById("contenedor-logs");
-        const contador = document.getElementById("contador-lineas");
-        const cantidadLineas = document.getElementById("selector-lineas").value;
-
-        contador.innerText = "Sincronizando...";
-        
-        try {
-            const respuesta = await fetch(`/api/logs/?lineas=${cantidadLineas}`);
-            if (!respuesta.ok) throw new Error("Error en la respuesta del servidor");
-            
-            const datos = await respuesta.json();
-            todasLasLineas = datos.logs;
-            
-            // Resetear el buscador visual al recargar
-            document.getElementById("buscador-logs").value = "";
-            
-            // Aplicar filtros combinados
-            procesarYFiltrarLogs();
-
-        } catch (error) {
-            console.error(error);
-            contenedor.innerHTML = `<div class="text-red-400 font-bold">❌ Error al conectar con la API de logs: ${error.message}</div>`;
-            contador.innerText = "Error";
-        }
+// 1. Esta función SOLO se encarga de pintar las líneas de texto en la consola
+function renderizarLines(listaDeLineas) {
+    const contenedor = document.getElementById("contenedor-logs");
+    const contador = document.getElementById("contador-lineas");
+    
+    if (listaDeLineas.length === 0) {
+        contenedor.innerHTML = `<div class="text-slate-500 italic p-2">No hay registros que coincidan con los filtros activos.</div>`;
+        contador.innerText = "0 líneas";
+        return;
     }
+
+    contenedor.innerHTML = listaDeLineas.map(linea => {
+        let colorTexto = "text-slate-300";
+        
+        if (linea.includes("[ERROR]") || linea.includes("[CRITICAL]")) {
+            colorTexto = "text-red-400 font-medium bg-red-950/10 px-1 rounded";
+        } else if (linea.includes("[WARNING]")) {
+            colorTexto = "text-yellow-400 font-medium bg-yellow-950/10 px-1 rounded";
+        } else if (linea.includes("[DEBUG]")) {
+            colorTexto = "text-blue-400/80";
+        }
+
+        let lineaFormateada = linea
+            .replace(/ID_ADMIN\[(.*?)\]/g, `<span class="text-emerald-400 font-semibold">ID_ADMIN[$1]</span>`)
+            .replace(/ID_USUARIO\[(.*?)\]/g, `<span class="text-purple-400 font-semibold">ID_USUARIO[$1]</span>`)
+            .replace(/\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]/g, `<span class="text-slate-500 font-medium">[$1]</span>`);
+
+        return `<div class="${colorTexto} hover:bg-slate-900/60 py-0.5 px-1 transition-colors break-all whitespace-pre-wrap">${lineaFormateada}</div>`;
+    }).join("");
+
+    contador.innerText = `${listaDeLineas.length} líneas mostradas`;
+}
+
+// 2. Modifica tu función cargarLogs para que sea la que asigne el nombre del archivo al arrancar
+async function cargarLogs() {
+    const contenedor = document.getElementById("contenedor-logs");
+    const contador = document.getElementById("contador-lineas");
+    const labelFichero = document.getElementById("nombre-fichero-log");
+    const cantidadLineas = document.getElementById("selector-lineas").value;
+
+    // Asignamos el nombre del fichero inmediatamente desde la variable global de Jinja2
+    if (window.LOG_FILE_PATH) {
+        labelFichero.innerText = window.LOG_FILE_PATH;
+    }
+
+    contador.innerText = "Sincronizando...";
+    
+    try {
+        const respuesta = await fetch(`/api/logs/?lineas=${cantidadLineas}`);
+        if (!respuesta.ok) throw new Error("Error en la respuesta del servidor");
+        
+        const datos = await respuesta.json();
+        todasLasLineas = datos.logs;
+        
+        document.getElementById("buscador-logs").value = "";
+        procesarYFiltrarLogs();
+
+    } catch (error) {
+        console.error(error);
+        contenedor.innerHTML = `<div class="text-red-400 font-bold">❌ Error al conectar con la API de logs: ${error.message}</div>`;
+        contador.innerText = "Error";
+    }
+}
 
     // Función que se ejecuta al hacer clic en cualquier botón LED
     function alternarFiltro(nivel) {
@@ -90,38 +127,6 @@
     // Esta función se ejecuta en tiempo real cada vez que se escribe en el input
     function filtrarLogs() {
         procesarYFiltrarLogs();
-    }
-
-    function renderizarLines(listaDeLineas) {
-        const contenedor = document.getElementById("contenedor-logs");
-        const contador = document.getElementById("contador-lineas");
-        
-        if (listaDeLineas.length === 0 || (listaDeLineas.length === 1 && listaDeLineas[0].includes("no se ha creado"))) {
-            contenedor.innerHTML = `<div class="text-slate-500 italic p-2">No hay registros que coincidan con los filtros activos.</div>`;
-            contador.innerText = "0 líneas";
-            return;
-        }
-
-        contenedor.innerHTML = listaDeLineas.map(linea => {
-            let colorTexto = "text-slate-300";
-            
-            if (linea.includes("[ERROR]") || linea.includes("[CRITICAL]")) {
-                colorTexto = "text-red-400 font-medium bg-red-950/10 px-1 rounded";
-            } else if (linea.includes("[WARNING]")) {
-                colorTexto = "text-yellow-400 font-medium bg-yellow-950/10 px-1 rounded";
-            } else if (linea.includes("[DEBUG]")) {
-                colorTexto = "text-blue-400/80";
-            }
-
-            let lineaFormateada = linea
-                .replace(/ID_ADMIN\[(.*?)\]/g, `<span class="text-emerald-400 font-semibold">ID_ADMIN[$1]</span>`)
-                .replace(/ID_USUARIO\[(.*?)\]/g, `<span class="text-purple-400 font-semibold">ID_USUARIO[$1]</span>`)
-                .replace(/\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]/g, `<span class="text-slate-500 font-medium">[$1]</span>`);
-
-            return `<div class="${colorTexto} hover:bg-slate-900/60 py-0.5 px-1 transition-colors break-all whitespace-pre-wrap">${lineaFormateada}</div>`;
-        }).join("");
-
-        contador.innerText = `${listaDeLineas.length} líneas mostradas`;
     }
 
     document.addEventListener("DOMContentLoaded", cargarLogs);
