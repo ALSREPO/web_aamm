@@ -115,7 +115,8 @@
 
             let lineaFormateada = linea
                 .replace(/ID_ADMIN\[(.*?)\]/g, `<span class="text-emerald-400 font-semibold">ID_ADMIN[$1]</span>`)
-                .replace(/ID_USUARIO\[(.*?)\]/g, `<span class="text-purple-400 font-semibold">ID_USUARIO[$1]</span>`);
+                .replace(/ID_USUARIO\[(.*?)\]/g, `<span class="text-purple-400 font-semibold">ID_USUARIO[$1]</span>`)
+                .replace(/\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]/g, `<span class="text-slate-500 font-medium">[$1]</span>`);
 
             return `<div class="${colorTexto} hover:bg-slate-900/60 py-0.5 px-1 transition-colors break-all whitespace-pre-wrap">${lineaFormateada}</div>`;
         }).join("");
@@ -124,3 +125,18 @@
     }
 
     document.addEventListener("DOMContentLoaded", cargarLogs);
+
+    function reestablecerTodo() {
+        // 1. Vaciar el buscador
+        document.getElementById("buscador-logs").value = "";
+        
+        // 2. Encender todos los filtros LED si estaban apagados
+        for (const nivel in filtrosActivos) {
+            if (!filtrosActivos[nivel]) {
+                alternarFiltro(nivel); // Esto invierte el estado y actualiza el diseño visual
+            }
+        }
+        
+        // 3. Si ya estaban todos encendidos, simplemente refrescamos la vista
+        procesarYFiltrarLogs();
+    }
