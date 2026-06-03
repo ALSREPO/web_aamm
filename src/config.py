@@ -25,6 +25,7 @@ db_config_editor = {
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
 LOG_TAMANO_FICHERO = int(os.environ.get("LOG_TAMANO_FICHERO", 5))
 LOG_NUM_FICHEROS_RESPALDO = int(os.environ.get("LOG_NUM_FICHEROS_RESPALDO", 3))
+LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", "logs/aamm_ejecucion.log")
 
 # 3. Configuración del token (JWT)
 SECRET_KEY = os.environ.get("SECRET_KEY")
