@@ -20,22 +20,27 @@ function renderizarLines(listaDeLineas) {
     }
 
     contenedor.innerHTML = listaDeLineas.map(linea => {
-        let colorTexto = "text-slate-300";
+        // Colores base adaptados (Gris oscuro en modo claro, Gris claro en modo noche)
+        let colorTexto = "text-slate-700 dark:text-slate-300"; 
         
         if (linea.includes("[ERROR]") || linea.includes("[CRITICAL]")) {
-            colorTexto = "text-red-400 font-medium bg-red-950/10 px-1 rounded";
+            // Rojo oscuro en modo claro, rojo pastel en modo noche
+            colorTexto = "text-red-700 dark:text-red-400 font-medium bg-red-50 dark:bg-red-950/10 px-1 rounded";
         } else if (linea.includes("[WARNING]")) {
-            colorTexto = "text-yellow-400 font-medium bg-yellow-950/10 px-1 rounded";
+            // Ocre en modo claro, amarillo en modo noche
+            colorTexto = "text-amber-700 dark:text-yellow-400 font-medium bg-amber-50 dark:bg-yellow-950/10 px-1 rounded";
         } else if (linea.includes("[DEBUG]")) {
-            colorTexto = "text-blue-400/80";
+            // Azul marino en modo claro, azul cielo en modo noche
+            colorTexto = "text-blue-700 dark:text-blue-400/80";
         }
 
+        // Modificamos también los resaltados de las identidades para que contrasten bien en ambos fondos
         let lineaFormateada = linea
-            .replace(/ID_ADMIN\[(.*?)\]/g, `<span class="text-emerald-400 font-semibold">ID_ADMIN[$1]</span>`)
-            .replace(/ID_USUARIO\[(.*?)\]/g, `<span class="text-purple-400 font-semibold">ID_USUARIO[$1]</span>`)
-            .replace(/\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]/g, `<span class="text-slate-500 font-medium">[$1]</span>`);
+            .replace(/ID_ADMIN\[(.*?)\]/g, `<span class="text-emerald-600 dark:text-emerald-400 font-semibold">ID_ADMIN[$1]</span>`)
+            .replace(/ID_USUARIO\[(.*?)\]/g, `<span class="text-purple-600 dark:text-purple-400 font-semibold">ID_USUARIO[$1]</span>`)
+            .replace(/\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]/g, `<span class="text-slate-400 dark:text-slate-500 font-medium">[$1]</span>`);
 
-        return `<div class="${colorTexto} hover:bg-slate-900/60 py-0.5 px-1 transition-colors break-all whitespace-pre-wrap">${lineaFormateada}</div>`;
+        return `<div class="${colorTexto} hover:bg-slate-100 dark:hover:bg-slate-900/60 py-0.5 px-1 transition-colors break-all whitespace-pre-wrap">${lineaFormateada}</div>`;
     }).join("");
 
     contador.innerText = `${listaDeLineas.length} líneas mostradas`;
