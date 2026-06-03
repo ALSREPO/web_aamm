@@ -32,7 +32,7 @@ def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     # Si está logueado, cargamos el listado (index.html)
-    logger.debug(f"Usuario autenticado: {user.email}, mostrando página principal")
+    logger.debug(f"Usuario autenticado, mostrando página principal, ID_USUARIO[{user.idusuario}]")
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
