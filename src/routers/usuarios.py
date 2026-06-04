@@ -3,7 +3,7 @@ import logging
 from fastapi import APIRouter, Depends, Query, HTTPException, Response
 from sqlalchemy.orm import Session
 from src.utils.db_tools import get_read_db, get_write_db
-from src.utils.auth import verificar_admin, usuario_obligatorio, verificar_password, obtener_password_hash
+from src.utils.auth import verificar_admin, usuario_obligatorio, verificar_password, obtener_password_hash, enviar_correo_cambio_estado
 from src.models.models import Usuario
 
 router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
@@ -35,10 +35,17 @@ def cambiar_estatus(idusuario: int, nuevo_nivel: int, db: Session = Depends(get_
         usuario.activo = nuevo_nivel
         db.commit()
         logger.info(f"Usuario ID_USUARIO[{usuario.idusuario}] actualizado a nivel {nuevo_nivel}, por admin ID_ADMIN[{admin.idusuario}]")
+
     except Exception as e:
         logger.error(f"Error al actualizar estatus para ID_USUARIO[{usuario.idusuario}], por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al actualizar el estatus")
-        
+    
+    try:
+        enviar_correo_cambio_estado(email_destino=usuario.email, estado=nuevo_nivel)
+        logger.info(f"Correo de cambio de estado [{nuevo_nivel}] enviado para ID_USUARIO[{usuario.idusuario}]")
+    except Exception as e:
+        logger.error(f"Error al enviar correo de cambio de estado [{nuevo_nivel}] para ID_USUARIO[{usuario.idusuario}]: {e}")
+
     return {"ok": True}
 
 
