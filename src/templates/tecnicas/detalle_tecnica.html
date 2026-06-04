@@ -29,9 +29,21 @@
 					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl aspect-video flex items-center justify-center">
 						<video id="main-video" controls class="w-full h-full" src=""></video>
 					</div>
-					-->
+					
 					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center max-h-[70vh] w-full">
 						<video id="main-video" controls class="max-w-full max-h-[70vh] w-auto h-auto" src=""></video>
+					</div>
+					<div id="lista-videos" class="flex gap-4 overflow-x-auto pb-2"></div>
+					-->
+				<!-- elimina el botón de descargar el vídeo -->
+					<div class="bg-black rounded-3xl overflow-hidden shadow-2xl flex items-center justify-center max-h-[70vh] w-full">
+						<video id="main-video" 
+							controls 
+							controlsList="nodownload" 
+							oncontextmenu="return false;" 
+							class="max-w-full max-h-[70vh] w-auto h-auto" 
+							src="">
+						</video>
 					</div>
 					<div id="lista-videos" class="flex gap-4 overflow-x-auto pb-2"></div>
 				</div>
