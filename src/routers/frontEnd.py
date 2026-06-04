@@ -1,8 +1,9 @@
 import logging
 
+import os
 from src.utils.auth import obtener_usuario_actual
 from fastapi import APIRouter, Depends, Request, status
-from fastapi.responses import RedirectResponse, HTMLResponse
+from fastapi.responses import RedirectResponse, HTMLResponse, FileResponse
 from fastapi.templating import Jinja2Templates
 from typing import Optional
 
@@ -134,3 +135,17 @@ async def pagina_admin_tablas(request: Request, user: Usuario = Depends(obtener_
 @router.get("/acerca-de", response_class=HTMLResponse)
 def pagina_acerca_de(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     return templates.TemplateResponse("acerca_de.html", {"request": request, "user": user})
+
+
+########################
+# Favicon (icono de la pestaña del navegador)
+@router.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    # Ojo: como FastAPI ejecuta la app desde la raíz del proyecto, 
+    # la ruta relativa sigue siendo la misma desde donde se levanta el proceso.
+    ruta_favicon = os.path.join("src", "static", "favicon.ico")
+    
+    if os.path.exists(ruta_favicon):
+        return FileResponse(ruta_favicon)
+    
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
