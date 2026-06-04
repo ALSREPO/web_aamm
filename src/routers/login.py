@@ -28,7 +28,7 @@ logger = logging.getLogger("AAMM-APP-login")
 # /login 
 # /logout
 # /registro
-# /usuarios/{idusuario}/activar
+# /verificar_mail
 
 import os
 from datetime import datetime, timedelta, timezone
@@ -226,15 +226,3 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
 </body>
 </html>
     """
-
-@router.patch("/usuarios/{idusuario}/activar", dependencies=[Depends(verificar_admin)])
-def activar_usuario(idusuario: int, estado: int, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
-    # Aquí buscaremos al usuario por ID y cambiaremos su campo activo a 1 o 2
-    user = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
-    if not user:
-        raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
-    user.activo = estado
-    db.commit()
-    logger.info(f"Usuario ID_USUARIO[{user.idusuario}] activado a nivel {estado}, por admin ID_ADMIN[{admin.idusuario}]")
-    return {"msg": f"Usuario activado"}
