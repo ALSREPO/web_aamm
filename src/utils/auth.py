@@ -142,6 +142,60 @@ def enviar_correo_verificacion(email_destino: str, token: str):
         return False
 
 
+def enviar_correo_cuenta_activada(email_destino: str):
+    # 1. Configuración de credenciales de correo (Reutilizamos tus variables globales)
+    smtp_server     = SMTP_SERVER 
+    smtp_port       = SMTP_PORT 
+    smtp_usuario    = SMTP_USERNAME 
+    smtp_password   = SMTP_PASSWORD 
+    
+    emisor          = EMAIL_EMISOR 
+    base_url        = BASE_URL # https://midominio.com
+    
+    enlace_login = f"{base_url}/login"
+
+    # 2. Creación del mensaje estructurado
+    mensaje = MIMEMultipart("alternative")
+    mensaje["From"] = emisor
+    mensaje["To"] = email_destino
+    mensaje["Subject"] = "¡Tu cuenta ha sido activada! - Web AAMM"
+
+    # HTML Fino, limpio y responsivo para el alumno
+    html_content = f"""
+    <div style="font-family: ui-sans-serif, system-ui, sans-serif; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; padding: 32px 24px; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: center;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🥋</div>
+        <h2 style="color: #0f172a; margin-top: 0; margin-bottom: 12px; font-size: 22px; font-weight: 800;">¡Tu cuenta ya está activa!</h2>
+        <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 28px;">
+            Un administrador ha verificado tu perfil correctamente. Ya puedes acceder a la plataforma de Artes Marciales para ver los vídeos y el contenido disponible.
+        </p>
+        <div style="margin: 30px 0;">
+            <a href="{enlace_login}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+                Iniciar Sesión Ahora
+            </a>
+        </div>
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">
+            Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+            <a href="{enlace_login}" style="color: #2563eb; text-decoration: underline;">{enlace_login}</a>
+        </p>
+    </div>
+    """
+    
+    mensaje.attach(MIMEText(html_content, "html"))
+
+    # 3. Envío seguro a través de Brevo
+    try:
+        server = smtplib.SMTP(smtp_server, smtp_port, timeout=10)
+        server.starttls()
+        server.login(smtp_usuario, smtp_password)
+        server.sendmail(emisor, email_destino, mensaje.as_string())
+        server.quit()
+        logger.info(f"Correo de cuenta activada enviado exitosamente a {email_destino}")
+        return True
+    except Exception as e:
+        logger.error(f"Error enviando correo de activación a través de Brevo - {email_destino}: {e}")
+        return False
+
 
 async def obtener_usuario_actual(request: Request, db: Session = Depends(get_read_db)):
     token = obtener_token_de_cookie(request)
