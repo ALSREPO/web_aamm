@@ -8,7 +8,7 @@ from fastapi.templating import Jinja2Templates
 from typing import Optional
 
 from src.models.models import Usuario
-from src.config import NUMERO_TECNICAS_POR_PAGINA
+from src.config import NUMERO_TECNICAS_POR_PAGINA, LOG_FILE_PATH
 
 router = APIRouter(prefix="", tags=["FrontEnd"])
 
@@ -33,7 +33,7 @@ def home(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
         return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
 
     # Si está logueado, cargamos el listado (index.html)
-    logger.debug(f"Usuario autenticado: {user.email}, mostrando página principal")
+    logger.debug(f"Usuario autenticado, mostrando página principal, ID_USUARIO[{user.idusuario}]")
     return templates.TemplateResponse("index.html", {
         "request": request,
         "user": user,
@@ -149,3 +149,11 @@ async def favicon():
         return FileResponse(ruta_favicon)
     
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+########################
+# Página de visualización de logs (solo para admins)
+@router.get("/admin/logs", response_class=HTMLResponse)
+def pagina_logs(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
+    if not user or user.activo < 2:
+        return RedirectResponse(url="/", status_code=303)
+    return templates.TemplateResponse("logs/admin_logs.html", {"request": request, "user": user, "LOG_FILE_PATH": LOG_FILE_PATH.split("/")[-1]})

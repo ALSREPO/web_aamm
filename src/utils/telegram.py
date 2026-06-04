@@ -21,9 +21,9 @@ def enviar_alerta_telegram(mensaje: str):
     try:
         response = requests.post(url, json=payload, timeout=5)
         if response.status_code != 200:
-            logger.error(f"Error de Telegram API: {response.text}")
+            logger.error(f"Error de Telegram API, para el usuario ID_USUARIO[{nombre}]: {response.text}")
     except Exception as e:
-        logger.error(f"No se pudo enviar la alerta de Telegram: {e}")
+        logger.error(f"No se pudo enviar la alerta de Telegram, para el usuario ID_USUARIO[{nombre}]: {e}")
 
 
 # A partir de un mail y un nombre, envía una solicitud al admin para aprobar o denegar el registro del usuario
@@ -63,9 +63,9 @@ def enviar_solicitud_registro_telegram(email: str, nombre: str):
 
     try:
         requests.post(url, json=payload, timeout=5)
-        logger.info(f"Solicitud de registro enviada a Telegram para: {nombre} - {email}")
+        logger.info(f"Solicitud de activación enviada a Telegram para el usuario ID_USUARIO[{nombre}]")
     except Exception as e:
-        logger.error(f"Error al enviar botones a Telegram: {e}")
+        logger.error(f"Error al enviar la solicitud de activación a Telegram para el usuario ID_USUARIO[{nombre}]: {e}")
 
 
 # Incluir en el bot de Telegram un manejador para los callbacks de los botones (Aprobar/Denegar) que actualice la base de datos y edite el mensaje original para reflejar la acción tomada. Esto se hace en el script del bot, no en FastAPI, pero es crucial para cerrar el ciclo de interacción.

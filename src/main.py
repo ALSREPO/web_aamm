@@ -75,6 +75,9 @@ app.include_router(tecnicas.router)
 from src.routers import videos
 app.include_router(videos.router)
 
+from src.routers import logs
+app.include_router(logs.router)
+
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)
 async def custom_404_handler(request: Request, __):

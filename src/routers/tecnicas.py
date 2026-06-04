@@ -40,19 +40,19 @@ def crear_disciplina(nombre: str, db: Session = Depends(get_write_db), admin: Us
     try:
         disciplina_existente = db.query(Disciplina).filter(func.upper(func.replace(Disciplina.disciplina, ' ', '')) == nombre_normalizado).first()
         if disciplina_existente:
-            logger.warning(f"Intento de crear disciplina duplicada '{disciplina_existente.iddisciplina} - {disciplina_existente.disciplina}' por admin {admin.idusuario} - {admin.email}")
+            logger.warning(f"Intento de crear disciplina duplicada '{disciplina_existente.iddisciplina} - {disciplina_existente.disciplina}' por admin ID_ADMIN[{admin.idusuario}]")
             raise HTTPException(status_code=400, detail="Disciplina ya existe")
 
         nueva = Disciplina(disciplina=nombre)
         db.add(nueva)
         db.commit()
         db.refresh(nueva)
-        logger.info(f"Nueva disciplina creada {nueva.iddisciplina} - {nueva.disciplina}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Nueva disciplina creada {nueva.iddisciplina} - {nueva.disciplina}, por admin ID_ADMIN[{admin.idusuario}]")
         return nueva
     except HTTPException:
         raise
     except Exception as err:
-        logger.exception(f"Error creando disciplina '{nombre}' por admin {admin.idusuario} - {admin.email}: {err}")
+        logger.exception(f"Error creando disciplina '{nombre}' por admin ID_ADMIN[{admin.idusuario}]: {err}")
         raise HTTPException(status_code=500, detail="Error al crear disciplina")
 
 @router.post("/etiquetas", dependencies=[Depends(verificar_admin)])
@@ -61,19 +61,19 @@ def crear_etiqueta(nombre: str, db: Session = Depends(get_write_db), admin: Usua
     try:
         etiqueta_existente = db.query(Etiqueta).filter(func.upper(func.replace(Etiqueta.etiqueta, ' ', '')) == nombre_normalizado).first()
         if etiqueta_existente:
-            logger.warning(f"Intento de crear etiqueta duplicada '{etiqueta_existente.idetiqueta} - {etiqueta_existente.etiqueta}' por admin {admin.idusuario} - {admin.email}")
+            logger.warning(f"Intento de crear etiqueta duplicada '{etiqueta_existente.idetiqueta} - {etiqueta_existente.etiqueta}' por admin ID_ADMIN[{admin.idusuario}]")
             raise HTTPException(status_code=400, detail="Etiqueta ya existe")
 
         nueva = Etiqueta(etiqueta=nombre)
         db.add(nueva)
         db.commit()
         db.refresh(nueva)
-        logger.info(f"Nueva etiqueta creada {nueva.idetiqueta} - {nueva.etiqueta}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Nueva etiqueta creada {nueva.idetiqueta} - {nueva.etiqueta}, por admin ID_ADMIN[{admin.idusuario}]")
         return nueva
     except HTTPException:
         raise
     except Exception as err:
-        logger.exception(f"Error creando etiqueta '{nombre}' por admin {admin.idusuario} - {admin.email}: {err}")
+        logger.exception(f"Error creando etiqueta '{nombre}' por admin ID_ADMIN[{admin.idusuario}]: {err}")
         raise HTTPException(status_code=500, detail="Error al crear etiqueta")
 
     
@@ -84,9 +84,9 @@ def borrar_disciplina(id: int, db: Session = Depends(get_write_db), admin: Usuar
         disciplina = db.query(Disciplina).filter(Disciplina.iddisciplina == id).first()
         db.query(Disciplina).filter(Disciplina.iddisciplina == id).delete()
         db.commit()
-        logger.info(f"Disciplina borrada {id} - {disciplina.disciplina}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Disciplina borrada {id} - {disciplina.disciplina}, por admin ID_ADMIN[{admin.idusuario}]")
     except:
-        logger.warning(f"Intento de borrado de disciplina no encontrada con id {id}, por admin {admin.idusuario} - {admin.email}")
+        logger.warning(f"Intento de borrado de disciplina no encontrada con id {id}, por admin ID_ADMIN[{admin.idusuario}]")
         raise HTTPException(status_code=404, detail="Disciplina no encontrada")
     
     return {"ok": True}
@@ -97,9 +97,9 @@ def borrar_etiqueta(id: int, db: Session = Depends(get_write_db), admin: Usuario
         etiqueta = db.query(Etiqueta).filter(Etiqueta.idetiqueta == id).first()
         db.query(Etiqueta).filter(Etiqueta.idetiqueta == id).delete()
         db.commit()
-        logger.info(f"Etiqueta borrada {id} - {etiqueta.etiqueta}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Etiqueta borrada {id} - {etiqueta.etiqueta}, por admin ID_ADMIN[{admin.idusuario}]")
     except:
-        logger.warning(f"Intento de borrado de etiqueta no encontrada con id {id}, por admin {admin.idusuario} - {admin.email}")
+        logger.warning(f"Intento de borrado de etiqueta no encontrada con id {id}, por admin ID_ADMIN[{admin.idusuario}]")
         raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
 
     return {"ok": True}
@@ -171,7 +171,7 @@ def listar_tecnicas(
         joinedload(Tecnica.etiquetas)
     ).order_by(criterio_orden).offset(skip).limit(limit).all()
 
-    logger.info(f"Listado de técnicas obtenido por usuario {usuario.idusuario} - {usuario.email} con filtros q='{q}', fecha='{fecha}', disciplina_id={disciplina_id}, etiqueta_id={etiqueta_id}, ordenado_por='{ordenar_por}', sentido='{sentido}', skip={skip}, limit={limit}. Total filtrados: {total_filtrados}")
+    logger.info(f"Listado de técnicas obtenido por ID_USUARIO[{usuario.idusuario}] con filtros q='{q}', fecha='{fecha}', disciplina_id={disciplina_id}, etiqueta_id={etiqueta_id}, ordenado_por='{ordenar_por}', sentido='{sentido}', skip={skip}, limit={limit}. Total filtrados: {total_filtrados}")
 
     # 9. Devolvemos el objeto que encaja con PaginaTecnicas
     return {
@@ -192,13 +192,13 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
         ).filter(Tecnica.idtecnica == idtecnica).first()
         
         if not tecnica:
-            logger.warning(f"Intento de acceso a técnica no encontrada con id {idtecnica} por usuario {usuario.idusuario} - {usuario.email}")
+            logger.warning(f"Intento de acceso a técnica no encontrada con id {idtecnica} por usuario ID_USUARIO[{usuario.idusuario}]")
             raise HTTPException(status_code=404, detail="Técnica no encontrada")
         
-        logger.info(f"Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido por usuario {usuario.idusuario} - {usuario.email}")
+        logger.info(f"Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido por usuario ID_USUARIO[{usuario.idusuario}]")
         return tecnica
     except Exception as e:
-        logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario {usuario.idusuario} - {usuario.email}: {e}")
+        logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario ID_USUARIO[{usuario.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")
 
 
@@ -240,11 +240,11 @@ def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), ad
         # 6. Guardar todo en la BBDD
         db.commit()
         db.refresh(nueva_tecnica)
-        logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
         return nueva_tecnica
 
     except Exception as e:
-        logger.error(f"Error al crear técnica '{obj_in.nombre}' por admin {admin.idusuario} - {admin.email}: {e}")
+        logger.error(f"Error al crear técnica '{obj_in.nombre}' por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al crear técnica")
 
 
@@ -275,10 +275,10 @@ def actualizar_tecnica(idtecnica: int, obj_in: TecnicaCreate, db: Session = Depe
 
         db.commit()
         db.refresh(tecnica)
-        logger.info(f"Técnica actualizada {tecnica.idtecnica} - {tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Técnica actualizada {tecnica.idtecnica} - {tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
         return tecnica
     except Exception as e:
-        logger.error(f"Error al actualizar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
+        logger.error(f"Error al actualizar técnica id {idtecnica} por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al actualizar técnica")
 
 
@@ -297,9 +297,9 @@ def borrar_tecnica(idtecnica: int, db: Session = Depends(get_write_db), admin: U
         # cascade="all, delete-orphan" en la relación del modelo.
         db.delete(tecnica)
         db.commit()
-        logger.info(f"Técnica borrada {tecnica.idtecnica} - {tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Técnica borrada {tecnica.idtecnica} - {tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
         return None
     except Exception as e:
-        logger.error(f"Error al borrar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
+        logger.error(f"Error al borrar técnica id {idtecnica} por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al borrar técnica")
 
