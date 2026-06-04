@@ -1,6 +1,7 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Header
+from fastapi.responses import FileResponse
 import os
 from shutil import copyfileobj
 from sqlalchemy.orm import Session
@@ -115,3 +116,35 @@ def auditoria_videos(db: Session = Depends(get_read_db), admin: Usuario = Depend
         "total_fisicos": len(archivos_fisicos),
         "total_en_uso": len(nombres_db)
     }
+
+
+
+
+@router.get("/{nombre_video}", dependencies=[Depends(usuario_obligatorio)])
+async def obtener_video_protegido(
+    nombre_video: str,
+    # Capturamos la cabecera Sec-Fetch-Mode que envía el navegador de forma automática
+    sec_fetch_mode: str = Header(None, alias="Sec-Fetch-Mode"),
+    user: Usuario = Depends(usuario_obligatorio)
+):
+    # Si el modo es 'navigate', es que han metido la URL a mano en la barra de direcciones
+    if sec_fetch_mode == "navigate":
+        logger.warning(f"Intento de acceso directo al video '{nombre_video}' con Sec-Fetch-Mode 'navigate', por usuario {user.idusuario} - {user.email}")
+        raise HTTPException(
+            status_code=403, 
+            detail="Acceso no permitido."
+        )
+    
+    # Evitamos ataques de salto de directorio (ej: ../../etc/passwd)
+    if ".." in nombre_video or nombre_video.startswith("/"):
+        raise HTTPException(status_code=400, detail="Ruta no permitida")
+        
+    ruta_completa = os.path.join(RUTA_VIDEOS, nombre_video)
+    
+    if not os.path.exists(ruta_completa):
+        logger.warning(f"Vídeo no encontrado: '{nombre_video}' por usuario {user.idusuario} - {user.email}")
+        raise HTTPException(status_code=404, detail="El vídeo no existe")
+        
+    # FileResponse en FastAPI maneja automáticamente los rangos de bytes (206 Partial Content)
+    # permitiendo pausar, rebobinar y avanzar el vídeo nativamente en el navegador.
+    return FileResponse(ruta_completa, media_type="video/mp4")
