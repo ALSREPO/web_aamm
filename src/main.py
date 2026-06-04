@@ -75,6 +75,12 @@ app.include_router(tecnicas.router)
 from src.routers import videos
 app.include_router(videos.router)
 
+# Si entra en una ruta no definida, redirige a la raíz
+@app.exception_handler(status.HTTP_404_NOT_FOUND)
+async def custom_404_handler(request: Request, __):
+    logger.warning(f"Ruta no encontrada: {request.url.path}, redirigiendo a la raíz")
+    return RedirectResponse(url="/", status_code=status.HTTP_303_SEE_OTHER)
+
 
 if __name__ == "__main__":
     import uvicorn
