@@ -23,6 +23,7 @@ async def ver_logs_traducidos(
 ):
     # 1. Si no existe ni el fichero base, es que no hay logs
     if not os.path.exists(LOG_FILE_PATH):
+        logger.warning(f"El archivo de log no existe en la ruta: {LOG_FILE_PATH}")
         return {"logs": ["El archivo de log aún no se ha creado."], "nombre_archivo": os.path.basename(LOG_FILE_PATH)}
 
     # 2. Traer usuarios optimizados para el mapa de traducción
