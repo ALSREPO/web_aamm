@@ -81,7 +81,7 @@ def login(response: Response, usuario: UsuarioLogin, db: Session = Depends(get_r
         secure=False     # Cambiar a True cuando tengas HTTPS/SSL
     )
 
-    logger.info(f"Login exitoso para ID_USUARIO[{db_user.idusuario}]")
+    logger.info(f"Inicio de sesión para ID_USUARIO[{db_user.idusuario}]")
     
     return {"message": "Login exitoso", "redirect": "/"}
 
@@ -101,7 +101,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
     if db_user:
         # Si ya está verificado, no permitimos hacer nada más
         if db_user.email_verificado:
-            logger.debug(f"Intento de registro con email ya verificado: ID_USUARIO[{db_user.idusuario}]")
+            logger.info(f"Intento de registro con email ya verificado: ID_USUARIO[{db_user.idusuario}]")
             raise HTTPException(status_code=400, detail="El email ya está registrado y verificado")
         
         # Si NO está verificado, actualizamos sus datos (por si cambió el nombre o pass)
@@ -121,7 +121,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
             email_verificado=False
         )
         db.add(db_user)
-        logger.debug(f"Nuevo usuario registrado: ID_USUARIO[{db_user.idusuario}]")
+        logger.info(f"Nuevo usuario registrado, pendiente de validación y de activación: ID_USUARIO[{db_user.idusuario}]")
 
     db.commit()
     
@@ -131,7 +131,7 @@ def registrar_usuario(usuario: UsuarioCreate, db: Session = Depends(get_write_db
 
     if not envio_ok:
         # Opcional: podrías decidir si borrar el usuario o avisar de un error
-        logger.warning(f"Aviso: El correo para verificar la cuenta de ID_USUARIO[{db_user.idusuario}] no se pudo enviar")
+        logger.error(f"Aviso: El correo para verificar la cuenta de ID_USUARIO[{db_user.idusuario}] no se pudo enviar")
 
     return {"message": "Si los datos son correctos, recibirás un correo para verificar tu cuenta."}
 
@@ -143,22 +143,44 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
     email = verificar_token_verificacion(token)
     
     if not email:
-        logger.warning(f"Intento de verificación de correo con token inválido: {token}")
+        logger.error(f"Intento de verificación de correo con token inválido: {token}")
         return """
-        <html>
-            <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-                <h1 style="color: #ef4444;">⚠️ Enlace inválido o caducado</h1>
-                <p>El enlace de verificación no es válido o ha expirado (24h). Por favor, intenta registrarte de nuevo.</p>
-                <a href="/registro" style="background: #475569; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">Volver al registro</a>
-            </body>
-        </html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enlace caducado</title>
+</head>
+<body style="font-family: ui-sans-serif, system-ui, sans-serif; background-color: #f8fafc; color: #334155; margin: 0; padding: 20px; display: flex; min-height: 90vh; align-items: center; justify-content: center; text-align: center;">
+
+    <div style="background: white; max-width: 450px; width: 100%; padding: 32px 24px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+        
+        <div style="font-size: 48px; margin-bottom: 16px;">⚠️</div>
+        
+        <h1 style="color: #ef4444; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 12px; line-height: 1.3;">
+            Enlace inválido o caducado
+        </h1>
+        
+        <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin-top: 0; margin-bottom: 28px; padding: 0 8px;">
+            El enlace de verificación no es válido o ha expirado (24h). Por favor, intenta registrarte de nuevo.
+        </p>
+        
+        <a href="/registro" style="background-color: #475569; color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; display: block; box-shadow: 0 4px 6px -1px rgba(71, 85, 105, 0.2); transition: background 0.2s;">
+            Volver al registro
+        </a>
+        
+    </div>
+
+</body>
+</html>
         """
 
     # 2. Buscar al usuario en la BBDD
     usuario = db.query(Usuario).filter(Usuario.email == email).first()
     
     if not usuario:
-        logger.warning(f"Intento de verificación de correo para email no encontrado: {email}")
+        logger.error(f"Intento de verificación de correo para email no encontrado: {email}")
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
 
     # 3. Actualizar el estado
@@ -174,14 +196,35 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
 
     # 4. Respuesta visual para el usuario
     return f"""
-    <html>
-        <body style="font-family: sans-serif; text-align: center; padding-top: 50px;">
-            <h1 style="color: #2563eb;">✅ {mensaje}</h1>
-            <p>Ahora un administrador debe activar tu cuenta manualmente para que puedas acceder.</p>
-            <br>
-            <a href="/login" style="background: #3b82f6; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Ir al Login</a>
-        </body>
-    </html>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro completado</title>
+</head>
+<body style="font-family: ui-sans-serif, system-ui, sans-serif; background-color: #f8fafc; color: #334155; margin: 0; padding: 20px; display: flex; min-height: 90vh; align-items: center; justify-content: center; text-align: center;">
+
+    <div style="background: white; max-width: 450px; width: 100%; padding: 32px 24px; border-radius: 16px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0;">
+        
+        <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+        
+        <h1 style="color: #2563eb; font-size: 22px; font-weight: 800; margin-top: 0; margin-bottom: 12px; line-height: 1.3;">
+            {mensaje}
+        </h1>
+        
+        <p style="font-size: 14px; color: #64748b; line-height: 1.6; margin-top: 0; margin-bottom: 28px; padding: 0 8px;">
+            Ahora un administrador debe activar tu cuenta manualmente para que puedas acceder al sistema.
+        </p>
+        
+        <a href="/login" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 15px; display: block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2); transition: background 0.2s;">
+            Ir al Login
+        </a>
+        
+    </div>
+
+</body>
+</html>
     """
 
 @router.patch("/usuarios/{idusuario}/activar", dependencies=[Depends(verificar_admin)])
