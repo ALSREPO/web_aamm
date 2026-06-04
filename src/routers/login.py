@@ -191,7 +191,7 @@ def verificar_mail(token: str = Query(...), db: Session = Depends(get_write_db))
         usuario.email_verificado = True
         db.commit()
         logger.info(f"Correo verificado para ID_USUARIO[{usuario.idusuario}]")
-        enviar_solicitud_registro_telegram(usuario.email, usuario.nombre)
+        enviar_solicitud_registro_telegram(usuario.email, usuario.nombre, usuario.idusuario)
         mensaje = "¡Gracias! Tu correo ha sido verificado correctamente."
 
     # 4. Respuesta visual para el usuario

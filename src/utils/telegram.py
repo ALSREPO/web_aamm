@@ -4,30 +4,9 @@ from src.config import TELEGRAM_BOT_TOKEN, TELEGRAM_ADMIN_CHAT_ID
 
 logger = logging.getLogger("AAMM-APP-TELEGRAM-NOTIFICADOR")
 
-# Solo envía mensajes al Administrador del bot de Telegram
-def enviar_alerta_telegram(mensaje: str):
-    """Envía un mensaje de notificación al administrador a través de un Bot de Telegram"""
-    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_ADMIN_CHAT_ID:
-        logger.warning("Telegram no configurado: Faltan variables de entorno.")
-        return
 
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": TELEGRAM_ADMIN_CHAT_ID,
-        "text": mensaje,
-        "parse_mode": "Markdown"  # Permite usar negritas, emojis, etc.
-    }
-
-    try:
-        response = requests.post(url, json=payload, timeout=5)
-        if response.status_code != 200:
-            logger.error(f"Error de Telegram API, para el usuario ID_USUARIO[{nombre}]: {response.text}")
-    except Exception as e:
-        logger.error(f"No se pudo enviar la alerta de Telegram, para el usuario ID_USUARIO[{nombre}]: {e}")
-
-
-# A partir de un mail y un nombre, envía una solicitud al admin para aprobar o denegar el registro del usuario
-def enviar_solicitud_registro_telegram(email: str, nombre: str):
+# A partir de un mail, un nombre y el id del usuario, envía una solicitud al admin para aprobar o denegar el registro del usuario
+def enviar_solicitud_registro_telegram(email: str, nombre: str, idusuario: int):
     """Envía una alerta al admin con botones interactivos para activar/denegar al usuario"""
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_ADMIN_CHAT_ID:
         logger.warning("Telegram no configurado.")
@@ -48,8 +27,8 @@ def enviar_solicitud_registro_telegram(email: str, nombre: str):
     inline_keyboard = {
         "inline_keyboard": [
             [
-                {"text": "✅ Aprobar", "callback_data": f"aprobar:{email}"},
-                {"text": "❌ Denegar", "callback_data": f"denegar:{email}"}
+                {"text": "✅ Aprobar", "callback_data": f"aprobar:{idusuario}"},
+                {"text": "❌ Denegar", "callback_data": f"denegar:{idusuario}"}
             ]
         ]
     }
@@ -63,11 +42,16 @@ def enviar_solicitud_registro_telegram(email: str, nombre: str):
 
     try:
         requests.post(url, json=payload, timeout=5)
-        logger.info(f"Solicitud de activación enviada a Telegram para el usuario ID_USUARIO[{nombre}]")
+        logger.info(f"Solicitud de activación enviada a Telegram para el usuario ID_USUARIO[{idusuario}]")
     except Exception as e:
-        logger.error(f"Error al enviar la solicitud de activación a Telegram para el usuario ID_USUARIO[{nombre}]: {e}")
+        logger.error(f"Error al enviar la solicitud de activación a Telegram para el usuario ID_USUARIO[{idusuario}]: {e}")
 
 
+# incluir en el fichero config del bot de telegram:
+"""
+API_BASE_URL = "https://aamm_develop.alsdev.com/api"
+TELEGRAM_BOT_API_KEY="pass" # la misma que en el .env/YAML de FastAPI, necesaria para autenticar la llamada desde el bot al endpoint de cambio de estatus
+"""
 # Incluir en el bot de Telegram un manejador para los callbacks de los botones (Aprobar/Denegar) que actualice la base de datos y edite el mensaje original para reflejar la acción tomada. Esto se hace en el script del bot, no en FastAPI, pero es crucial para cerrar el ciclo de interacción.
 """
 # MANEJADOR PARA LOS BOTONES INTERACTIVOS (Aprobar / Denegar)
@@ -80,48 +64,63 @@ def callback_gestion_usuarios(call):
     if not es_admin(cid, False):
         return
 
-    # 2. Extraer la acción y el email del callback_data
-    accion, email = call.data.split(":", 1)
+    # 2. Extraer la acción y el ID de usuario del callback_data
+    accion, idusuario = call.data.split(":", 1)
     
-    # 3. Conectamos a la base de datos de tu proyecto FastAPI actual
-    # NOTA: Adapta "obtener_conexion_fastapi()" a cómo te conectes en tu script del bot
+    # 3. Mapeamos la acción de Telegram con los estados reales de tu API
+    # 1 = Activar, 0 = Banear/Denegar
+    nuevo_estado = 1 if accion == "aprobar" else 0
+    
+    # Construimos la URL exacta apuntando a tu nuevo endpoint
+    url_api = f"{API_BASE_URL}/usuarios/cambiar-estatus-bot/{idusuario}"
+    
+    # Parámetros que espera recibir tu endpoint (estado)
+    params = {"estado": nuevo_estado}
+    
+    # 🛠️ IMPORTANTE: Si tu endpoint pide token de administrador por cabecera, 
+    # añade aquí las credenciales. Si no las pide, puedes borrar la variable headers.
+    headers = {
+        "X-Telegram-Bot-Key": TELEGRAM_BOT_API_KEY # La misma del .env
+    }
+
     try:
-        with obtener_conexion() as db:
-            with db.cursor() as cursor:
-                if accion == "aprobar":
-                    # Cambiamos activo a True (o 1) buscando por email
-                    cursor.execute("UPDATE ta_usuarios SET activo = 1 WHERE email = %s", (email,))
-                    db.commit()
-                    
-                    texto_editado = f"✅ *Cuenta Activada Exitosamente*\n📧 Correo: `{email}`\n\n_Acción procesada por el Administrador._"
-                    alerta_pop_up = "Usuario aprobado con éxito"
-                    print(f"Se aprueba la solicitud de {email}")
-                    
-                elif accion == "denegar":
-                    # Si se deniega, podemos optar por borrarlo o dejarlo inactivo (activo=False)
-                    # En este ejemplo lo dejamos Inactivo permanentemente
-                    cursor.execute("UPDATE ta_usuarios SET activo = -1 WHERE email = %s", (email,))
-                    db.commit()
-                    
-                    texto_editado = f"❌ *Cuenta Denegada/Bloqueada*\n📧 Correo: `{email}`\n\n_Acción procesada por el Administrador._"
-                    alerta_pop_up = "Usuario rechazado"
-                    print(f"Se rechaza la solicitud de {email}")
-
-        # 4. Modificar el mensaje original en Telegram para quitar los botones 
-        # y dejar constancia de que ya se ha pulsado. ¡Evita que se pulse dos veces!
-        bot.edit_message_text(
-            chat_id=call.message.chat.id,
-            message_id=call.message.id,
-            text=texto_editado,
-            parse_mode="Markdown",
-            reply_markup=None # Quitamos los botones
-        )
+        # Hacemos la llamada HTTP PATCH a FastAPI
+        # Si no usas seguridad en este endpoint específico, quita el parámetro: headers=headers
+        response = requests.patch(url_api, params=params, headers=headers, timeout=10, verify=False)
         
-        # 5. Notificación flotante rápida en la pantalla de Telegram del administrador
-        bot.answer_callback_query(call.id, alerta_pop_up)
+        # Si la API responde con un código 2xx (Éxito)
+        if response.status_code == 200:
+            
+            if accion == "aprobar":
+                texto_editated = f"✅ *Cuenta Activada Exitosamente*\n🆔 ID Usuario: `{idusuario}`\n\n_Acción procesada vía API y notificada por correo._"
+                alerta_pop_up = "Usuario aprobado con éxito"
+                print(f"API: Se aprueba al usuario ID {idusuario}")
+            else:
+                texto_editated = f"❌ *Cuenta Denegada/Bloqueada*\n🆔 ID Usuario: `{idusuario}`\n\n_Acción procesada vía API._"
+                alerta_pop_up = "Usuario rechazado"
+                print(f"API: Se deniega al usuario ID {idusuario}")
 
-    except Exception as e:
-        print(f"Error en BBDD al procesar Telegram Callback: {e}")
-        bot.answer_callback_query(call.id, "❌ Error interno en la Base de Datos", show_alert=True)
+            # 4. Modificar el mensaje original en Telegram para deshabilitar botones
+            bot.edit_message_text(
+                chat_id=call.message.chat.id,
+                message_id=call.message.id,
+                text=texto_editated,
+                parse_mode="Markdown",
+                reply_markup=None # Quitamos los botones para evitar doble clic
+            )
+            
+            # 5. Notificación flotante de éxito en la app de Telegram
+            bot.answer_callback_query(call.id, alerta_pop_up)
+            
+        else:
+            # Si la API encuentra un error (Ej: 404 No encontrado, 401 No autorizado)
+            error_detail = response.json().get("detail", "Error desconocido")
+            print(f"Error devuelto por la API [{response.status_code}]: {error_detail}")
+            bot.answer_callback_query(call.id, f"❌ Error API ({response.status_code}): {error_detail}", show_alert=True)
+
+    except requests.exceptions.RequestException as e:
+        # Controlamos si el servidor FastAPI está caído o no responde
+        print(f"Error de conexión con la API de FastAPI: {e}")
+        bot.answer_callback_query(call.id, "🔌 No se pudo conectar con el servidor de la API", show_alert=True)
 
 """

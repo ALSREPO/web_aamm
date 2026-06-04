@@ -1,10 +1,13 @@
 import logging
 
-from fastapi import APIRouter, Depends, Query, HTTPException, Response
+import os
+from fastapi import APIRouter, Depends, Query, HTTPException, Response, Security, status
+from fastapi.security import APIKeyHeader
 from sqlalchemy.orm import Session
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_admin, usuario_obligatorio, verificar_password, obtener_password_hash, enviar_correo_cambio_estado
 from src.models.models import Usuario
+from src.config import TELEGRAM_BOT_API_KEY
 
 router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
 
@@ -47,6 +50,61 @@ def cambiar_estatus(idusuario: int, nuevo_nivel: int, db: Session = Depends(get_
         logger.error(f"Error al enviar correo de cambio de estado [{nuevo_nivel}] para ID_USUARIO[{usuario.idusuario}]: {e}")
 
     return {"ok": True}
+
+
+
+
+# PROTECCIÓN DEL ENDPOINT DE CAMBIO DE ESTATUS DESDE EL BOT DE TELEGRAM CON API-KEY
+
+# 1. Definimos que buscaremos la clave en una cabecera llamada 'X-Telegram-Bot-Key'
+X_API_KEY = APIKeyHeader(name="X-Telegram-Bot-Key", auto_error=False)
+
+# 2. Función de dependencia que valida la clave
+def verificar_webhook_key(api_key_header: str = Security(X_API_KEY)):
+    # Traemos la clave real guardada en el .env
+    api_key_real = os.getenv("TELEGRAM_BOT_API_KEY")
+    
+    if not api_key_header or api_key_header != api_key_real:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Clave de API de Telegram no válida o ausente"
+        )
+    return api_key_header
+
+
+# Endpoint paralelo exclusivo para el Bot
+@router.patch("/cambiar-estatus-bot/{idusuario}")
+def cambiar_estatus_desde_bot(
+    idusuario: int, 
+    estado: int, 
+    db: Session = Depends(get_write_db),
+    _key: str = Depends(verificar_webhook_key) # Protegido con la API-Key
+):
+    # Buscamos al usuario por ID
+    user = db.query(Usuario).filter(Usuario.idusuario == idusuario).first()
+    if not user:
+        logger.warning(f"BOT_TELEGRAM:Intento de cambio de estatus para usuario no encontrado con id [{idusuario}]")
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
+    
+    try: 
+        user.activo = estado
+        db.commit()
+        logger.info(f"BOT_TELEGRAM: Usuario ID_USUARIO[{user.idusuario}] actualizado a nivel {estado}")
+
+    except Exception as e:
+        logger.error(f"BOT_TELEGRAM: Error al actualizar estatus para ID_USUARIO[{user.idusuario}]: {e}")
+        raise HTTPException(status_code=500, detail="Error al actualizar el estatus")
+    
+    
+    # Disparamos la lógica unificada de correos 
+    try:
+        enviar_correo_cambio_estado(email_destino=user.email, estado=estado)
+        logger.info(f"BOT_TELEGRAM: Correo de cambio de estado [{estado}] enviado para ID_USUARIO[{user.idusuario}]")
+    except Exception as e:
+        logger.error(f"BOT_TELEGRAM: Error al enviar correo de cambio de estado [{estado}] para ID_USUARIO[{user.idusuario}]: {e}")
+
+    return {"msg": f"BOT_TELEGRAM: Estado actualizado correctamente por el bot"}
+
 
 
 @router.put("/cambiar-password", dependencies=[Depends(usuario_obligatorio)])
