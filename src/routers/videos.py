@@ -129,7 +129,7 @@ async def obtener_video_protegido(
 ):
     # Si el modo es 'navigate', es que han metido la URL a mano en la barra de direcciones
     if sec_fetch_mode == "navigate":
-        logger.warning(f"Intento de acceso directo al video '{nombre_video}' con Sec-Fetch-Mode 'navigate', por usuario {user.idusuario} - {user.email}")
+        logger.warning(f"Intento de acceso directo al video '{nombre_video}' con Sec-Fetch-Mode 'navigate', por usuario ID_USUARIO[{user.idusuario}]")
         raise HTTPException(
             status_code=403, 
             detail="Acceso no permitido."
@@ -142,7 +142,7 @@ async def obtener_video_protegido(
     ruta_completa = os.path.join(RUTA_VIDEOS, nombre_video)
     
     if not os.path.exists(ruta_completa):
-        logger.warning(f"Vídeo no encontrado: '{nombre_video}' por usuario {user.idusuario} - {user.email}")
+        logger.warning(f"Vídeo no encontrado: '{nombre_video}' por usuario ID_USUARIO[{user.idusuario}]")
         raise HTTPException(status_code=404, detail="El vídeo no existe")
         
     # FileResponse en FastAPI maneja automáticamente los rangos de bytes (206 Partial Content)
