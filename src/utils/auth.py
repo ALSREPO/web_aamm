@@ -111,16 +111,24 @@ def enviar_correo_verificacion(email_destino: str, token: str):
     mensaje["Subject"] = "Verifica tu cuenta en la web AAMM"
 
     html_content = f"""
-    <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
-        <h2 style="color: #333;">¡Bienvenido a la web de Artes Marciales!</h2>
-        <p>Para terminar tu registro, por favor confirma tu dirección de correo electrónico pulsando el siguiente botón:</p>
-        <div style="text-align: center; margin: 30px 0;">
-            <a href="{enlace}" style="background-color: #1f54de; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verificar Correo</a>
+<!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body style="margin: 0; padding: 20px; background-color: #ffffff;">
+        <div style="font-family: sans-serif; max-width: 600px; margin: auto; border: 1px solid #eee; padding: 20px;">
+            <h2 style="color: #333;">¡Bienvenido a la web de Artes Marciales!</h2>
+            <p>Para terminar tu registro, por favor confirma tu dirección de correo electrónico pulsando el siguiente botón:</p>
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{enlace}" style="background-color: #1f54de; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-weight: bold;">Verificar Correo</a>
+            </div>
+            <p style="font-size: 12px; color: #666;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{enlace}</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 12px; color: #999;">Este enlace caducará en 24 horas. Si no te has registrado tú, puedes ignorar este correo.</p>
         </div>
-        <p style="font-size: 12px; color: #666;">Si el botón no funciona, copia y pega este enlace en tu navegador:<br>{enlace}</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-        <p style="font-size: 12px; color: #999;">Este enlace caducará en 24 horas. Si no te has registrado tú, puedes ignorar este correo.</p>
-    </div>
+    </body>
+    </html>
     """
     
     # Acoplamos el contenido HTML al mensaje
@@ -197,23 +205,31 @@ def enviar_correo_cambio_estado(email_destino: str, estado: int):
 
     # Plantilla HTML única y responsiva que se adapta dinámicamente
     html_content = f"""
-    <div style="font-family: ui-sans-serif, system-ui, sans-serif; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; padding: 32px 24px; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: center;">
-        <div style="font-size: 48px; margin-bottom: 16px;">{info["icono"]}</div>
-        <h2 style="color: #0f172a; margin-top: 0; margin-bottom: 12px; font-size: 22px; font-weight: 800;">{info["titulo"]}</h2>
-        <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 28px;">
-            {info["texto"]}
-        </p>
-        <div style="margin: 30px 0;">
-            <a href="{info["enlace"]}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
-                {info["boton_texto"]}
-            </a>
+<!DOCTYPE html>
+    <html lang="es">
+    <head>
+        <meta charset="UTF-8">
+    </head>
+    <body style="margin: 0; padding: 20px; background-color: #f8fafc;">
+        <div style="font-family: ui-sans-serif, system-ui, sans-serif; max-width: 500px; margin: auto; border: 1px solid #e2e8f0; padding: 32px 24px; border-radius: 16px; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">{info["icono"]}</div>
+            <h2 style="color: #0f172a; margin-top: 0; margin-bottom: 12px; font-size: 22px; font-weight: 800;">{info["titulo"]}</h2>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 28px;">
+                {info["texto"]}
+            </p>
+            <div style="margin: 30px 0;">
+                <a href="{info["enlace"]}" style="background-color: #2563eb; color: white; padding: 14px 28px; text-decoration: none; border-radius: 12px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+                    {info["boton_texto"]}
+                </a>
+            </div>
+            <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
+            <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">
+                Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                <a href="{info["enlace"]}" style="color: #2563eb; text-decoration: underline;">{info["enlace"]}</a>
+            </p>
         </div>
-        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 24px 0;">
-        <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin: 0;">
-            Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
-            <a href="{info["enlace"]}" style="color: #2563eb; text-decoration: underline;">{info["enlace"]}</a>
-        </p>
-    </div>
+    </body>
+    </html>
     """
     
     mensaje.attach(MIMEText(html_content, "html"))
