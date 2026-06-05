@@ -42,26 +42,28 @@
 			`).join('');
 
 
-             // Lógica de vídeos
+             // Lógica de vídeosadaptada a la API Protegida
             const wrapperVideo = document.getElementById('wrapper-video');
-			const mainVideo = document.getElementById('main-video');
+            const mainVideo = document.getElementById('main-video');
 
-			if (t.videos && t.videos.length > 0) {
-				// Si hay vídeos, mostramos el contenedor y cargamos el primero
-				wrapperVideo.classList.remove('hidden');
-				mainVideo.src = `/static/videos/${t.videos[0].video}`;
-				
-				if (t.videos.length > 1) {
-					document.getElementById('lista-videos').innerHTML = t.videos.map((v, index) => `
-						<button onclick="cambiarVideo('/static/videos/${v.video}')" 
-							class="flex-none w-32 aspect-video bg-slate-900 rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition focus:border-blue-500 relative group">
-							<div class="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/10 transition text-[10px] text-white font-bold">VÍDEO ${index + 1}</div>
-						</button>
-					`).join('');
-				} else {
-					document.getElementById('lista-videos').innerHTML = ''; // Limpiar si solo hay uno
-				}
-			} else {
+            if (t.videos && t.videos.length > 0) {
+                // Mostramos el contenedor
+                wrapperVideo.classList.remove('hidden');
+                
+                // 🚀 CAMBIO: Apuntamos al endpoint de streaming de la API en lugar de static
+                mainVideo.src = `/api/videos/${t.videos[0].video}`;
+                
+                if (t.videos.length > 1) {
+                    document.getElementById('lista-videos').innerHTML = t.videos.map((v, index) => `
+                        <button onclick="cambiarVideo('/api/videos/${v.video}')" 
+                            class="flex-none w-32 aspect-video bg-slate-900 rounded-xl overflow-hidden border-2 border-transparent hover:border-blue-500 transition focus:border-blue-500 relative group cursor-pointer">
+                            <div class="absolute inset-0 flex items-center justify-center bg-black/40 group-hover:bg-black/10 transition text-[10px] text-white font-bold">VÍDEO ${index + 1}</div>
+                        </button>
+                    `).join('');
+                } else {
+                    document.getElementById('lista-videos').innerHTML = ''; // Limpiar si solo hay uno
+                }
+            } else {
 				// Si no hay vídeos, el wrapperVideo se queda con 'hidden'
 				console.log("Esta técnica no tiene vídeos.");
 			}

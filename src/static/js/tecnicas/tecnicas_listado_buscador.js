@@ -297,10 +297,14 @@
 		// 3. Limpiar la variable global de filtros para que el "Cargar más" funcione bien
 		filtrosActuales = "";
 
-		// 4. Recargar el listado original (sin parámetros)
+        // 4. Forzar la actualización de la interfaz de ordenación
+        // Al ejecutarse después del reset(), verá el input vacío y restaurará los selectores
+        actualizarEstadoFiltros();
+
+		// 5. Recargar el listado original (sin parámetros)
 		cargarTecnicas();
 
-		// 5. (Opcional) Si quieres que el buscador se cierre al limpiar
+		// 6. (Opcional) Si quieres que el buscador se cierre al limpiar
 		// toggleBuscador();
 	}
 
@@ -330,3 +334,63 @@
 			alert('Error al conectar con el servidor');
 		}
 	}
+
+
+
+
+
+    function actualizarEstadoFiltros() {
+        const inputQ = document.getElementById('input-q');
+        const selectOrden = document.getElementById('select-orden');
+        const btnSentido = document.getElementById('btn-sentido');
+        const wrapperOrden = document.getElementById('wrapper-orden');
+        const labelOrden = document.getElementById('label-orden');
+        
+        // Comprobamos si hay texto en el buscador de palabras clave
+        if (inputQ.value.trim() !== "") {
+            // 1. Si no existe ya la opción de Relevancia, la creamos y la seleccionamos
+            if (!document.getElementById('opt-relevancia')) {
+                const optRelevancia = document.createElement('option');
+                optRelevancia.id = 'opt-relevancia';
+                optRelevancia.value = 'relevancia';
+                optRelevancia.textContent = '✨ Relevancia';
+                
+                // La añadimos al principio del select
+                selectOrden.insertBefore(optRelevancia, selectOrden.firstChild);
+            }
+            
+            // 2. Forzamos el valor a Relevancia y deshabilitamos los controles
+            selectOrden.value = 'relevancia';
+            selectOrden.disabled = true;
+            btnSentido.disabled = true;
+            
+            // 3. Feedback visual sutil (bajamos la opacidad del bloque y cambiamos el texto)
+            wrapperOrden.classList.add('opacity-60');
+            labelOrden.textContent = 'Orden (Automático)';
+            
+        } else {
+            // 1. Si el usuario borra la palabra clave, eliminamos la opción de Relevancia
+            const optRelevancia = document.getElementById('opt-relevancia');
+            if (optRelevancia) {
+                optRelevancia.remove();
+            }
+            
+            // 2. Habilitamos los controles de nuevo
+            selectOrden.disabled = false;
+            btnSentido.disabled = false;
+            
+            // 3. Restauramos los valores por defecto o los que estuvieran antes
+            if (selectOrden.value === 'relevancia') {
+                selectOrden.value = 'fecha'; // O el valor que tengas por defecto en tu configuración
+            }
+            
+            // 4. Restauramos el aspecto visual
+            wrapperOrden.classList.remove('opacity-60');
+            labelOrden.textContent = 'Orden';
+        }
+    }
+
+    // Ejecutar al cargar el documento para asegurar el estado correcto inicial
+    document.addEventListener("DOMContentLoaded", () => {
+        actualizarEstadoFiltros();
+    });

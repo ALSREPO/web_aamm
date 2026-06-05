@@ -5,6 +5,7 @@ from sqlalchemy import func, text, desc, asc
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date
+import re
 
 from src.models.models import Usuario, Disciplina, Etiqueta, Tecnica, Video
 from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas, TecnicaDetalle, TecnicaCreate, TecnicaRead
@@ -40,19 +41,19 @@ def crear_disciplina(nombre: str, db: Session = Depends(get_write_db), admin: Us
     try:
         disciplina_existente = db.query(Disciplina).filter(func.upper(func.replace(Disciplina.disciplina, ' ', '')) == nombre_normalizado).first()
         if disciplina_existente:
-            logger.warning(f"Intento de crear disciplina duplicada '{disciplina_existente.iddisciplina} - {disciplina_existente.disciplina}' por admin {admin.idusuario} - {admin.email}")
+            logger.warning(f"Intento de crear disciplina duplicada '{disciplina_existente.iddisciplina} - {disciplina_existente.disciplina}' por admin ID_ADMIN[{admin.idusuario}]")
             raise HTTPException(status_code=400, detail="Disciplina ya existe")
 
         nueva = Disciplina(disciplina=nombre)
         db.add(nueva)
         db.commit()
         db.refresh(nueva)
-        logger.info(f"Nueva disciplina creada {nueva.iddisciplina} - {nueva.disciplina}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Nueva disciplina creada {nueva.iddisciplina} - {nueva.disciplina}, por admin ID_ADMIN[{admin.idusuario}]")
         return nueva
     except HTTPException:
         raise
     except Exception as err:
-        logger.exception(f"Error creando disciplina '{nombre}' por admin {admin.idusuario} - {admin.email}: {err}")
+        logger.exception(f"Error creando disciplina '{nombre}' por admin ID_ADMIN[{admin.idusuario}]: {err}")
         raise HTTPException(status_code=500, detail="Error al crear disciplina")
 
 @router.post("/etiquetas", dependencies=[Depends(verificar_admin)])
@@ -61,19 +62,19 @@ def crear_etiqueta(nombre: str, db: Session = Depends(get_write_db), admin: Usua
     try:
         etiqueta_existente = db.query(Etiqueta).filter(func.upper(func.replace(Etiqueta.etiqueta, ' ', '')) == nombre_normalizado).first()
         if etiqueta_existente:
-            logger.warning(f"Intento de crear etiqueta duplicada '{etiqueta_existente.idetiqueta} - {etiqueta_existente.etiqueta}' por admin {admin.idusuario} - {admin.email}")
+            logger.warning(f"Intento de crear etiqueta duplicada '{etiqueta_existente.idetiqueta} - {etiqueta_existente.etiqueta}' por admin ID_ADMIN[{admin.idusuario}]")
             raise HTTPException(status_code=400, detail="Etiqueta ya existe")
 
         nueva = Etiqueta(etiqueta=nombre)
         db.add(nueva)
         db.commit()
         db.refresh(nueva)
-        logger.info(f"Nueva etiqueta creada {nueva.idetiqueta} - {nueva.etiqueta}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Nueva etiqueta creada {nueva.idetiqueta} - {nueva.etiqueta}, por admin ID_ADMIN[{admin.idusuario}]")
         return nueva
     except HTTPException:
         raise
     except Exception as err:
-        logger.exception(f"Error creando etiqueta '{nombre}' por admin {admin.idusuario} - {admin.email}: {err}")
+        logger.exception(f"Error creando etiqueta '{nombre}' por admin ID_ADMIN[{admin.idusuario}]: {err}")
         raise HTTPException(status_code=500, detail="Error al crear etiqueta")
 
     
@@ -84,9 +85,9 @@ def borrar_disciplina(id: int, db: Session = Depends(get_write_db), admin: Usuar
         disciplina = db.query(Disciplina).filter(Disciplina.iddisciplina == id).first()
         db.query(Disciplina).filter(Disciplina.iddisciplina == id).delete()
         db.commit()
-        logger.info(f"Disciplina borrada {id} - {disciplina.disciplina}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Disciplina borrada {id} - {disciplina.disciplina}, por admin ID_ADMIN[{admin.idusuario}]")
     except:
-        logger.warning(f"Intento de borrado de disciplina no encontrada con id {id}, por admin {admin.idusuario} - {admin.email}")
+        logger.warning(f"Intento de borrado de disciplina no encontrada con id {id}, por admin ID_ADMIN[{admin.idusuario}]")
         raise HTTPException(status_code=404, detail="Disciplina no encontrada")
     
     return {"ok": True}
@@ -97,9 +98,9 @@ def borrar_etiqueta(id: int, db: Session = Depends(get_write_db), admin: Usuario
         etiqueta = db.query(Etiqueta).filter(Etiqueta.idetiqueta == id).first()
         db.query(Etiqueta).filter(Etiqueta.idetiqueta == id).delete()
         db.commit()
-        logger.info(f"Etiqueta borrada {id} - {etiqueta.etiqueta}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Etiqueta borrada {id} - {etiqueta.etiqueta}, por admin ID_ADMIN[{admin.idusuario}]")
     except:
-        logger.warning(f"Intento de borrado de etiqueta no encontrada con id {id}, por admin {admin.idusuario} - {admin.email}")
+        logger.warning(f"Intento de borrado de etiqueta no encontrada con id {id}, por admin ID_ADMIN[{admin.idusuario}]")
         raise HTTPException(status_code=404, detail="Etiqueta no encontrada")
 
     return {"ok": True}
@@ -109,7 +110,6 @@ def borrar_etiqueta(id: int, db: Session = Depends(get_write_db), admin: Usuario
 ##################################
 #
 # Listado de Técnicas para la página principal, con filtros y paginación
-
 @router.get("/", response_model=PaginaTecnicas, dependencies=[Depends(usuario_obligatorio)])
 def listar_tecnicas(
     q: Optional[str] = Query(None),
@@ -121,64 +121,107 @@ def listar_tecnicas(
     skip: int = 0,
     limit: int = NUMERO_TECNICAS_POR_PAGINA,
     db: Session = Depends(get_read_db),
-    # Usamos la dependencia que lanza 401 si no hay usuario
     usuario: Usuario = Depends(usuario_obligatorio) 
 ):
-    # 1. Iniciamos la consulta con Eager Loading para que el JS no falle
-    #query = db.query(Tecnica).options(
-    #    joinedload(Tecnica.disciplinas),
-    #    joinedload(Tecnica.etiquetas)
-    #)
+    # 1. Base de la consulta para el filtrado dinámico
     query = db.query(Tecnica)
     
-    # 2. Filtro de texto FULLTEXT
+    # Filtro de texto FULLTEXT estándar con sanitización para evitar errores de sintaxis en MySQL BOOLEAN MODE
     if q:
+        # PASO 1: Sanitización estricta para evitar errores de sintaxis en MySQL BOOLEAN MODE
+        # Eliminamos caracteres operadores de MySQL FULLTEXT que puedan romper la query: + - < > ~ * ( ) "
+        q_sanitizada = re.sub(r'[+\-<>~*()"]', '', q)
+        
+        # Limpiamos espacios en blanco duplicados, dobles o al inicio/final
+        q_sanitizada = " ".join(q_sanitizada.split())
+        
+        # Si después de limpiar no queda texto válido (ej: solo habían puesto espacios o "< >"), 
+        # saltamos el filtro para que la API no explote y devuelva el listado normal.
+        if not q_sanitizada:
+            q = None
+    
+    # 2. Aplicamos los filtros estándar de la aplicación
+    if q:
+        search_term = f"*{q_sanitizada}*"
+        
         query = query.filter(
             text("MATCH(nombre, descripcion) AGAINST(:search IN BOOLEAN MODE)")
-        ).params(search=f"*{q}*")
+        ).params(search=search_term)
     
-    # 3. Filtro por fecha exacta
     if fecha:
         query = query.filter(Tecnica.fecha == fecha)
 
-    # 4. Filtros por Disciplinas (Lógica AND: debe cumplir todas las seleccionadas)
     if disciplina_id:
         for d_id in disciplina_id:
             query = query.filter(Tecnica.disciplinas.any(Disciplina.iddisciplina == d_id))
     
-    # 5. Filtros por Etiquetas (Lógica AND)
     if etiqueta_id:
         for e_id in etiqueta_id:
             query = query.filter(Tecnica.etiquetas.any(Etiqueta.idetiqueta == e_id))
     
-    # 6. Contar el total de resultados filtrados (Importante hacerlo antes del offset)
+    # 3. El total de filtrados sigue siendo exacto
     total_filtrados = query.count()
     
-    
-    # 7. Ordenación Dinámica Segura
-    campos_validos = {
-        "id": Tecnica.idtecnica,
-        "nombre": Tecnica.nombre,
-        "fecha": Tecnica.fecha
-    }
-    
-    campo_db = campos_validos.get(ordenar_por, Tecnica.fecha)
-    criterio_orden = desc(campo_db) if sentido == "desc" else asc(campo_db)
-    
-    # 8. Traer solo la "página" actual con sus relaciones
-    resultados = query.options(
-        joinedload(Tecnica.disciplinas),
-        joinedload(Tecnica.etiquetas)
-    ).order_by(criterio_orden).offset(skip).limit(limit).all()
+    # 4. RESOLUCIÓN DE LA BÚSQUEDA Y ORDENACIÓN
+    if q:
+        # PASO A: Traemos solo los campos mínimos de los registros que pasan el filtro (sin relaciones)
+        # Esto es extremadamente rápido en memoria
+        tecnicas_candidatas = query.with_entities(Tecnica.idtecnica, Tecnica.nombre, Tecnica.descripcion).all()
+        
+        # PASO B: Calculamos el score de relevancia en Python emulando tu lógica SQL (Nombre x3 + Descripción)
+        # Usamos expresiones regulares básicas ignorando mayúsculas/minúsculas
+        palabra_buscada = q_sanitizada.lower()
+        lista_con_scores = []
+        
+        for id_tec, nombre, descr in tecnicas_candidatas:
+            score_nombre = len(re.findall(re.escape(palabra_buscada), nombre.lower())) * 3
+            score_descr = len(re.findall(re.escape(palabra_buscada), descr.lower())) if descr else 0
+            total_score = score_nombre + score_descr
+            
+            lista_con_scores.append((id_tec, total_score))
+        
+        # PASO C: Ordenamos toda la lista de mayor a menor score
+        lista_con_scores.sort(key=lambda x: x[1], reverse=True)
+        
+        # PASO D: Extraemos los IDs que corresponden exactamente a la página solicitada (Paginación en Python)
+        pagina_ids = [id_tec for id_tec, _ in lista_con_scores[skip : skip + limit]]
+        
+        # PASO E: Si no hay resultados para esta página, devolvemos lista vacía rápido
+        if not pagina_ids:
+            return {"total": total_filtrados, "resultados": []}
+        
+        # PASO F: Hacemos la query final limpia recuperando los objetos completos con sus relaciones
+        # Usamos un mapa para garantizar que se mantenga el orden de relevancia en el output final
+        resultados_desordenados = db.query(Tecnica).options(
+            joinedload(Tecnica.disciplinas),
+            joinedload(Tecnica.etiquetas)
+        ).filter(Tecnica.idtecnica.in_(pagina_ids)).all()
+        
+        # Mapeamos para ordenar los objetos tal cual el orden de 'pagina_ids'
+        mapa_resultados = {r.idtecnica: r for r in resultados_desordenados}
+        resultados = [mapa_resultados[id_tec] for id_tec in pagina_ids if id_tec in mapa_resultados]
 
-    logger.info(f"Listado de técnicas obtenido por usuario {usuario.idusuario} - {usuario.email} con filtros q='{q}', fecha='{fecha}', disciplina_id={disciplina_id}, etiqueta_id={etiqueta_id}, ordenado_por='{ordenar_por}', sentido='{sentido}', skip={skip}, limit={limit}. Total filtrados: {total_filtrados}")
+    else:
+        # 5. FLUJO TRADICIONAL (Si el usuario no está buscando por texto)
+        campos_validos = {
+            "id": Tecnica.idtecnica,
+            "nombre": Tecnica.nombre,
+            "fecha": Tecnica.fecha
+        }
+        campo_db = campos_validos.get(ordenar_por, Tecnica.fecha)
+        criterio_orden = desc(campo_db) if sentido == "desc" else asc(campo_db)
+        
+        resultados = query.options(
+            joinedload(Tecnica.disciplinas),
+            joinedload(Tecnica.etiquetas)
+        ).order_by(criterio_orden).offset(skip).limit(limit).all()
 
-    # 9. Devolvemos el objeto que encaja con PaginaTecnicas
+    logger.info(f"Listado de técnicas obtenido exitosamente. Total filtrados: {total_filtrados}")
+
     return {
         "total": total_filtrados,
         "resultados": resultados
     }
-
 
 # Obtener detalle de técnica (para la página de detalle, con sus vídeos, disciplinas y etiquetas)
 
@@ -192,13 +235,13 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
         ).filter(Tecnica.idtecnica == idtecnica).first()
         
         if not tecnica:
-            logger.warning(f"Intento de acceso a técnica no encontrada con id {idtecnica} por usuario {usuario.idusuario} - {usuario.email}")
+            logger.warning(f"Intento de acceso a técnica no encontrada con id {idtecnica} por usuario ID_USUARIO[{usuario.idusuario}]")
             raise HTTPException(status_code=404, detail="Técnica no encontrada")
         
-        logger.info(f"Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido por usuario {usuario.idusuario} - {usuario.email}")
+        logger.info(f"Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido por usuario ID_USUARIO[{usuario.idusuario}]")
         return tecnica
     except Exception as e:
-        logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario {usuario.idusuario} - {usuario.email}: {e}")
+        logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario ID_USUARIO[{usuario.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")
 
 
@@ -240,11 +283,11 @@ def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), ad
         # 6. Guardar todo en la BBDD
         db.commit()
         db.refresh(nueva_tecnica)
-        logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
         return nueva_tecnica
 
     except Exception as e:
-        logger.error(f"Error al crear técnica '{obj_in.nombre}' por admin {admin.idusuario} - {admin.email}: {e}")
+        logger.error(f"Error al crear técnica '{obj_in.nombre}' por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al crear técnica")
 
 
@@ -275,10 +318,10 @@ def actualizar_tecnica(idtecnica: int, obj_in: TecnicaCreate, db: Session = Depe
 
         db.commit()
         db.refresh(tecnica)
-        logger.info(f"Técnica actualizada {tecnica.idtecnica} - {tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Técnica actualizada {tecnica.idtecnica} - {tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
         return tecnica
     except Exception as e:
-        logger.error(f"Error al actualizar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
+        logger.error(f"Error al actualizar técnica id {idtecnica} por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al actualizar técnica")
 
 
@@ -297,9 +340,9 @@ def borrar_tecnica(idtecnica: int, db: Session = Depends(get_write_db), admin: U
         # cascade="all, delete-orphan" en la relación del modelo.
         db.delete(tecnica)
         db.commit()
-        logger.info(f"Técnica borrada {tecnica.idtecnica} - {tecnica.nombre}, por admin {admin.idusuario} - {admin.email}")
+        logger.info(f"Técnica borrada {tecnica.idtecnica} - {tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
         return None
     except Exception as e:
-        logger.error(f"Error al borrar técnica id {idtecnica} por admin {admin.idusuario} - {admin.email}: {e}")
+        logger.error(f"Error al borrar técnica id {idtecnica} por admin ID_ADMIN[{admin.idusuario}]: {e}")
         raise HTTPException(status_code=500, detail="Error al borrar técnica")
 

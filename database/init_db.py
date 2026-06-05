@@ -43,7 +43,10 @@ def inicializar_base_de_datos():
             logger.warning(f"[DB INIT] No se encontró la carpeta de scripts en: {SCRIPTS_DIR}")
             return
 
-        sql_files = sorted([f for f in os.listdir(SCRIPTS_DIR) if f.endswith(".sql")])
+        sql_files = sorted([
+            f for f in os.listdir(SCRIPTS_DIR) 
+            if f.endswith(".sql") and not f.endswith("_prueba.sql")
+        ])
 
         # 3. Obtener cuáles ya se han ejecutado previamente
         result = connection.execute(text("SELECT version FROM _schema_migrations"))

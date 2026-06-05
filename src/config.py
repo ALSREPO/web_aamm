@@ -23,6 +23,9 @@ db_config_editor = {
 
 # 2. Configuración del nivel de logs (Dinámica)
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO").upper()
+LOG_TAMANO_FICHERO = int(os.environ.get("LOG_TAMANO_FICHERO", 5))
+LOG_NUM_FICHEROS_RESPALDO = int(os.environ.get("LOG_NUM_FICHEROS_RESPALDO", 3))
+LOG_FILE_PATH = os.environ.get("LOG_FILE_PATH", "logs/aamm_ejecucion.log")
 
 # 3. Configuración del token (JWT)
 SECRET_KEY = os.environ.get("SECRET_KEY")
@@ -45,3 +48,11 @@ SENTIDO_ORDEN_LISTADO_TECNICAS = os.environ.get("SENTIDO_ORDEN_LISTADO_TECNICAS"
 
 RUTA_VIDEOS = os.environ.get("RUTA_VIDEOS", "/src/static/videos")
 TAMANYO_MAXIMO_SUBIDA_VIDEOS = int(os.environ.get("TAMANYO_MAXIMO_SUBIDA_VIDEOS", 300)) # en MB
+
+# 6. Configuración para Telegram Bot
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+TELEGRAM_ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID")
+TELEGRAM_BOT_API_KEY = os.getenv("TELEGRAM_BOT_API_KEY")
+
+# 7. Configuración para mostrar/ocultar el horario
+MOSTRAR_HORARIO = int(os.getenv("MOSTRAR_HORARIO"))
