@@ -65,36 +65,34 @@
 	<div id="panel-buscador" class="hidden mb-8 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700">
 		<form id="form-busqueda" class="space-y-4">
 			<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-				<div class="md:col-span-2">
-					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Palabra clave</label>
-					<input type="text" id="input-q" placeholder="Ej: 'llave de brazo', 'proyección'..." 
-						class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
-				</div>
-				
-				<div class="md:col-span-1">
-					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha exacta</label>
-					<input type="date" id="input-fecha" 
-						class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-				</div>
-	
-				
-				<div class="md:col-span-1">
-					<label class="block text-xs font-bold text-slate-500 uppercase mb-1">Orden</label>
-					<div class="flex gap-2">
-						<select id="select-orden" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none text-sm">
-							<option value="fecha">Fecha</option>
-							<option value="nombre">Nombre</option>
-							<option value="id">ID</option>
-						</select>
-						<button type="button" onclick="toggleSentido()" id="btn-sentido" title="Cambiar orden"
-							class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 rounded-lg hover:bg-slate-100 transition">
-							<span id="icon-sentido">↓</span>
-						</button>
-						<input type="hidden" id="input-sentido" value="desc">
-					</div>
-				</div>
+                <div class="md:col-span-2">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Palabra clave</label>
+                    <input type="text" id="input-q" oninput="actualizarEstadoFiltros()" placeholder="Ej: 'llave de brazo', 'proyección'..." 
+                        class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                
+                <div class="md:col-span-1">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fecha exacta</label>
+                    <input type="date" id="input-fecha" 
+                        class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                </div>
 
-			</div>
+                <div class="md:col-span-1" id="wrapper-orden">
+                    <label id="label-orden" class="block text-xs font-bold text-slate-500 uppercase mb-1">Orden</label>
+                    <div class="flex gap-2">
+                        <select id="select-orden" class="flex-grow bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 outline-none text-sm disabled:bg-slate-50 dark:disabled:bg-slate-950 disabled:text-slate-400 dark:disabled:text-slate-500 transition-all">
+                            <option value="fecha">Fecha</option>
+                            <option value="nombre">Nombre</option>
+                            <option value="id">ID</option>
+                        </select>
+                        <button type="button" onclick="toggleSentido()" id="btn-sentido" title="Cambiar orden"
+                            class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 px-3 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:hover:bg-white dark:disabled:hover:bg-slate-900 transition">
+                            <span id="icon-sentido">↓</span>
+                        </button>
+                        <input type="hidden" id="input-sentido" value="desc">
+                    </div>
+                </div>
+            </div>
 
 			<div class="grid grid-cols-1 md:grid-cols-5 gap-4">
 				<div class="md:col-span-1">
