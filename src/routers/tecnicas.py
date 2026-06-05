@@ -126,11 +126,27 @@ def listar_tecnicas(
     # 1. Base de la consulta para el filtrado dinámico
     query = db.query(Tecnica)
     
+    # Filtro de texto FULLTEXT estándar con sanitización para evitar errores de sintaxis en MySQL BOOLEAN MODE
+    if q:
+        # PASO 1: Sanitización estricta para evitar errores de sintaxis en MySQL BOOLEAN MODE
+        # Eliminamos caracteres operadores de MySQL FULLTEXT que puedan romper la query: + - < > ~ * ( ) "
+        q_sanitizada = re.sub(r'[+\-<>~*()"]', '', q)
+        
+        # Limpiamos espacios en blanco duplicados, dobles o al inicio/final
+        q_sanitizada = " ".join(q_sanitizada.split())
+        
+        # Si después de limpiar no queda texto válido (ej: solo habían puesto espacios o "< >"), 
+        # saltamos el filtro para que la API no explote y devuelva el listado normal.
+        if not q_sanitizada:
+            q = None
+    
     # 2. Aplicamos los filtros estándar de la aplicación
     if q:
+        search_term = f"*{q_sanitizada}*"
+        
         query = query.filter(
             text("MATCH(nombre, descripcion) AGAINST(:search IN BOOLEAN MODE)")
-        ).params(search=f"*{q}*")
+        ).params(search=search_term)
     
     if fecha:
         query = query.filter(Tecnica.fecha == fecha)
@@ -154,7 +170,7 @@ def listar_tecnicas(
         
         # PASO B: Calculamos el score de relevancia en Python emulando tu lógica SQL (Nombre x3 + Descripción)
         # Usamos expresiones regulares básicas ignorando mayúsculas/minúsculas
-        palabra_buscada = q.lower()
+        palabra_buscada = q_sanitizada.lower()
         lista_con_scores = []
         
         for id_tec, nombre, descr in tecnicas_candidatas:
