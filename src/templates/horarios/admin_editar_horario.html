@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+
+{% block title %}Panel de Administración - Horarios{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto px-4 py-8">
+    
+    <div class="text-center mb-8">
+        <h1 class="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+            ⚙️ Panel de Control: <span class="text-blue-500">Horarios</span>
+        </h1>
+        <p class="mt-2 text-sm text-slate-500 dark:text-slate-400">
+            Añade o elimina las clases de la parrilla semanal
+        </p>
+    </div>
+
+    <div class="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700/70 mb-8 shadow-sm">
+        <h2 class="text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase pb-2 mb-4 border-b border-slate-200 dark:border-slate-700">
+            Añadir Nueva Clase
+        </h2>
+        
+        <form id="form-crear-clase" class="space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Actividad</label>
+                <input type="text" name="actividad" id="input-actividad" required list="actividades-existentes" placeholder="Ej: Jiu-Jitsu Brasileño" 
+                       class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-800 dark:text-slate-200 placeholder-slate-400 dark:placeholder-slate-600 outline-none focus:ring-2 focus:ring-blue-500 transition">
+                
+                <datalist id="actividades-existentes">
+                    {% set actividades_vistas = [] %}
+                    {% for numero_dia, clases in horario.items() %}
+                        {% for clase in clases %}
+                            {% if clase.actividad not in actividades_vistas %}
+                                <option value="{{ clase.actividad }}">
+                                {% if actividades_vistas.append(clase.actividad) %}{% endif %}
+                            {% endif %}
+                        {% endfor %}
+                    {% endfor %}
+                </datalist>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Día</label>
+                    <select name="dia_semana" required 
+                            class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition">
+                        <option value="1">Lunes</option>
+                        <option value="2">Martes</option>
+                        <option value="3">Miércoles</option>
+                        <option value="4">Jueves</option>
+                        <option value="5">Viernes</option>
+                        <option value="6">Sábado</option>
+                        <option value="7">Domingo</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Inicio</label>
+                    <input type="time" name="hora_inicio" required 
+                           class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition font-mono">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-1">Fin</label>
+                    <input type="time" name="hora_fin" required 
+                           class="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-4 py-2 text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-blue-500 transition font-mono">
+                </div>
+            </div>
+
+            <div class="pt-2">
+                <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl text-sm shadow-md shadow-blue-500/10 transition cursor-pointer">
+                    Guardar Clase
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="space-y-8">
+        {% set nombres_dias = {1: "Lunes", 2: "Martes", 3: "Miércoles", 4: "Jueves", 5: "Viernes", 6: "Sábado", 7: "Domingo"} %}
+
+        {% for numero_dia, nombre_dia in nombres_dias.items() %}
+        <div>
+            <h2 class="text-xs font-bold tracking-wider text-slate-400 dark:text-slate-500 uppercase pb-2 mb-4 border-b border-slate-200 dark:border-slate-800">
+                {{ nombre_dia }}
+            </h2>
+            
+            <div class="space-y-3">
+                {% if horario[numero_dia] %}
+                    {% for clase in horario[numero_dia] %}
+                    
+                    <div id="clase-row-{{ clase.idhorario }}" class="flex items-center justify-between p-4 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/60 rounded-2xl shadow-sm hover:border-slate-300 dark:hover:border-slate-600 transition-all duration-200">
+                        
+                        <div class="flex items-center gap-3 min-w-0 flex-1 pr-4">
+                            
+                            <div class="flex gap-1 shrink-0">
+                                <button onclick="guardarEdicion({{ clase.idhorario }})" class="btn-guardar hidden bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-emerald-500/10 transition cursor-pointer shrink-0">
+                                    💾
+                                </button>
+                                <button onclick="borrarClase({{ clase.idhorario }})" class="btn-borrar text-slate-400 hover:text-red-500 dark:hover:text-red-400 p-1.5 rounded-lg transition cursor-pointer" title="Eliminar">
+                                    🗑️
+                                </button>
+                                <button onclick="conmutarEdicion({{ clase.idhorario }})" class="btn-editar text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 p-1.5 rounded-lg transition cursor-pointer" title="Editar">
+                                    ✏️
+                                </button>
+                            </div>
+
+                            <div class="flex-1 min-w-0">
+                                <div class="modo-vista">
+                                    <p class="font-bold text-slate-800 dark:text-slate-200 text-sm md:text-base leading-tight txt-actividad">
+                                        {{ clase.actividad }}
+                                    </p>
+                                </div>
+
+                                <div class="modo-edicion hidden space-y-2">
+                                    <input type="text" class="edit-actividad w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-1.5 text-xs text-slate-800 dark:text-slate-200 outline-none focus:ring-1 focus:ring-blue-500" value="{{ clase.actividad }}">
+                                    <div class="flex gap-1 items-center">
+                                        <input type="time" class="edit-inicio bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-slate-200 font-mono outline-none" value="{{ clase.hora_inicio.strftime('%H:%M') }}">
+                                        <span class="text-slate-400 text-xs font-bold px-0.5">a</span>
+                                        <input type="time" class="edit-fin bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-slate-200 font-mono outline-none" value="{{ clase.hora_fin.strftime('%H:%M') }}">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-right shrink-0 flex items-center gap-3">
+                            <div class="modo-vista">
+                                <span class="font-mono text-[11px] leading-none font-bold text-white bg-slate-800 dark:bg-slate-700 px-2 py-1 rounded uppercase tracking-wider block txt-horas">
+                                    {{ clase.hora_inicio.strftime('%H:%M') }} - {{ clase.hora_fin.strftime('%H:%M') }}
+                                </span>
+                            </div>
+                        </div>
+
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-xs text-slate-400 dark:text-slate-500 italic pl-2 py-1">Sin clases programadas</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</div>
+
+<script src="/static/js/horarios/admin_editar_horario.js" defer></script>
+
+{% endblock %}

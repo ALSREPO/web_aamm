@@ -53,3 +53,6 @@ TAMANYO_MAXIMO_SUBIDA_VIDEOS = int(os.environ.get("TAMANYO_MAXIMO_SUBIDA_VIDEOS"
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
 TELEGRAM_ADMIN_CHAT_ID = os.getenv("TELEGRAM_ADMIN_CHAT_ID")
 TELEGRAM_BOT_API_KEY = os.getenv("TELEGRAM_BOT_API_KEY")
+
+# 7. Configuración para mostrar/ocultar el horario
+MOSTRAR_HORARIO = int(os.getenv("MOSTRAR_HORARIO"))
