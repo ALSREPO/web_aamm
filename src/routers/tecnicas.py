@@ -122,106 +122,130 @@ def listar_tecnicas(
     limit: int = NUMERO_TECNICAS_POR_PAGINA,
     db: Session = Depends(get_read_db),
     usuario: Usuario = Depends(usuario_obligatorio) 
-):
-    # 1. Base de la consulta para el filtrado dinámico
-    query = db.query(Tecnica)
-    
-    # Filtro de texto FULLTEXT estándar con sanitización para evitar errores de sintaxis en MySQL BOOLEAN MODE
-    if q:
-        # PASO 1: Sanitización estricta para evitar errores de sintaxis en MySQL BOOLEAN MODE
-        # Eliminamos caracteres operadores de MySQL FULLTEXT que puedan romper la query: + - < > ~ * ( ) "
-        q_sanitizada = re.sub(r'[+\-<>~*()"]', '', q)
-        
-        # Limpiamos espacios en blanco duplicados, dobles o al inicio/final
-        q_sanitizada = " ".join(q_sanitizada.split())
-        
-        # Si después de limpiar no queda texto válido (ej: solo habían puesto espacios o "< >"), 
-        # saltamos el filtro para que la API no explote y devuelva el listado normal.
-        if not q_sanitizada:
-            q = None
-    
-    # 2. Aplicamos los filtros estándar de la aplicación
-    if q:
-        search_term = f"*{q_sanitizada}*"
-        
-        query = query.filter(
-            text("MATCH(nombre, descripcion) AGAINST(:search IN BOOLEAN MODE)")
-        ).params(search=search_term)
-    
-    if fecha:
-        query = query.filter(Tecnica.fecha == fecha)
+):# Volcado inicial de auditoría: Captura todos los parámetros de la Query String solicitada
+    query_params_str = (
+        f"q={q}&fecha={fecha}&disciplina_id={disciplina_id}&etiqueta_id={etiqueta_id}"
+        f"&ordenar_por={ordenar_por}&sentido={sentido}&skip={skip}&limit={limit}"
+    )
+    logger.info(
+        f"ID_USUARIO [{usuario.idusuario}] - Búsqueda listado de técnicas: GET /api/tecnicas/?{query_params_str}"
+    )
 
-    if disciplina_id:
-        for d_id in disciplina_id:
-            query = query.filter(Tecnica.disciplinas.any(Disciplina.iddisciplina == d_id))
-    
-    if etiqueta_id:
-        for e_id in etiqueta_id:
-            query = query.filter(Tecnica.etiquetas.any(Etiqueta.idetiqueta == e_id))
-    
-    # 3. El total de filtrados sigue siendo exacto
-    total_filtrados = query.count()
-    
-    # 4. RESOLUCIÓN DE LA BÚSQUEDA Y ORDENACIÓN
-    if q:
-        # PASO A: Traemos solo los campos mínimos de los registros que pasan el filtro (sin relaciones)
-        # Esto es extremadamente rápido en memoria
-        tecnicas_candidatas = query.with_entities(Tecnica.idtecnica, Tecnica.nombre, Tecnica.descripcion).all()
+    try:
+        # 1. Base de la consulta para el filtrado dinámico
+        query = db.query(Tecnica)
         
-        # PASO B: Calculamos el score de relevancia en Python emulando tu lógica SQL (Nombre x3 + Descripción)
-        # Usamos expresiones regulares básicas ignorando mayúsculas/minúsculas
-        palabra_buscada = q_sanitizada.lower()
-        lista_con_scores = []
-        
-        for id_tec, nombre, descr in tecnicas_candidatas:
-            score_nombre = len(re.findall(re.escape(palabra_buscada), nombre.lower())) * 3
-            score_descr = len(re.findall(re.escape(palabra_buscada), descr.lower())) if descr else 0
-            total_score = score_nombre + score_descr
+        # Filtro de texto FULLTEXT estándar con sanitización para evitar errores de sintaxis en MySQL BOOLEAN MODE
+        if q:
+            # PASO 1: Sanitización estricta para evitar errores de sintaxis en MySQL BOOLEAN MODE
+            # Eliminamos caracteres operadores de MySQL FULLTEXT que puedan romper la query: + - < > ~ * ( ) "
+            q_sanitizada = re.sub(r'[+\-<>~*()"]', '', q)
             
-            lista_con_scores.append((id_tec, total_score))
+            # Limpiamos espacios en blanco duplicados, dobles o al inicio/final
+            q_sanitizada = " ".join(q_sanitizada.split())
+            
+            # Si después de limpiar no queda texto válido (ej: solo habían puesto espacios o "< >"), 
+            # saltamos el filtro para que la API no explote y devuelva el listado normal.
+            if not q_sanitizada:
+                q = None
+                logger.warning(f"ID_USUARIO [{usuario.idusuario}] - El término de búsqueda 'q' quedó vacío tras la sanitización.")
         
-        # PASO C: Ordenamos toda la lista de mayor a menor score
-        lista_con_scores.sort(key=lambda x: x[1], reverse=True)
+        # 2. Aplicamos los filtros estándar de la aplicación
+        if q:
+            search_term = f"*{q_sanitizada}*"
+            
+            query = query.filter(
+                text("MATCH(nombre, descripcion) AGAINST(:search IN BOOLEAN MODE)")
+            ).params(search=search_term)
         
-        # PASO D: Extraemos los IDs que corresponden exactamente a la página solicitada (Paginación en Python)
-        pagina_ids = [id_tec for id_tec, _ in lista_con_scores[skip : skip + limit]]
-        
-        # PASO E: Si no hay resultados para esta página, devolvemos lista vacía rápido
-        if not pagina_ids:
-            return {"total": total_filtrados, "resultados": []}
-        
-        # PASO F: Hacemos la query final limpia recuperando los objetos completos con sus relaciones
-        # Usamos un mapa para garantizar que se mantenga el orden de relevancia en el output final
-        resultados_desordenados = db.query(Tecnica).options(
-            joinedload(Tecnica.disciplinas),
-            joinedload(Tecnica.etiquetas)
-        ).filter(Tecnica.idtecnica.in_(pagina_ids)).all()
-        
-        # Mapeamos para ordenar los objetos tal cual el orden de 'pagina_ids'
-        mapa_resultados = {r.idtecnica: r for r in resultados_desordenados}
-        resultados = [mapa_resultados[id_tec] for id_tec in pagina_ids if id_tec in mapa_resultados]
+        if fecha:
+            query = query.filter(Tecnica.fecha == fecha)
 
-    else:
-        # 5. FLUJO TRADICIONAL (Si el usuario no está buscando por texto)
-        campos_validos = {
-            "id": Tecnica.idtecnica,
-            "nombre": Tecnica.nombre,
-            "fecha": Tecnica.fecha
+        if disciplina_id:
+            for d_id in disciplina_id:
+                query = query.filter(Tecnica.disciplinas.any(Disciplina.iddisciplina == d_id))
+        
+        if etiqueta_id:
+            for e_id in etiqueta_id:
+                query = query.filter(Tecnica.etiquetas.any(Etiqueta.idetiqueta == e_id))
+        
+        # 3. El total de filtrados sigue siendo exacto
+        total_filtrados = query.count()
+        
+        # 4. RESOLUCIÓN DE LA BÚSQUEDA Y ORDENACIÓN
+        if q:
+            # PASO A: Traemos solo los campos mínimos de los registros que pasan el filtro (sin relaciones)
+            # Esto es extremadamente rápido en memoria
+            tecnicas_candidatas = query.with_entities(Tecnica.idtecnica, Tecnica.nombre, Tecnica.descripcion).all()
+            
+            # PASO B: Calculamos el score de relevancia en Python emulando tu lógica SQL (Nombre x3 + Descripción)
+            # Usamos expresiones regulares básicas ignorando mayúsculas/minúsculas
+            palabra_buscada = q_sanitizada.lower()
+            lista_con_scores = []
+            
+            for id_tec, nombre, descr in tecnicas_candidatas:
+                score_nombre = len(re.findall(re.escape(palabra_buscada), nombre.lower())) * 3
+                score_descr = len(re.findall(re.escape(palabra_buscada), descr.lower())) if descr else 0
+                total_score = score_nombre + score_descr
+                
+                lista_con_scores.append((id_tec, total_score))
+            
+            # PASO C: Ordenamos toda la lista de mayor a menor score
+            lista_con_scores.sort(key=lambda x: x[1], reverse=True)
+            
+            # PASO D: Extraemos los IDs que corresponden exactamente a la página solicitada (Paginación en Python)
+            pagina_ids = [id_tec for id_tec, _ in lista_con_scores[skip : skip + limit]]
+            
+            # PASO E: Si no hay resultados para esta página, devolvemos lista vacía rápido
+            if not pagina_ids:
+                logger.info(f"ID_USUARIO [{usuario.idusuario}] - Búsqueda por score finalizada sin resultados para la página solicitada.")
+                return {"total": total_filtrados, "resultados": []}
+            
+            # PASO F: Hacemos la query final limpia recuperando los objetos completos con sus relaciones
+            # Usamos un mapa para garantizar que se mantenga el orden de relevancia en el output final
+            resultados_desordenados = db.query(Tecnica).options(
+                joinedload(Tecnica.disciplinas),
+                joinedload(Tecnica.etiquetas)
+            ).filter(Tecnica.idtecnica.in_(pagina_ids)).all()
+            
+            # Mapeamos para ordenar los objetos tal cual el orden de 'pagina_ids'
+            mapa_resultados = {r.idtecnica: r for r in resultados_desordenados}
+            resultados = [mapa_resultados[id_tec] for id_tec in pagina_ids if id_tec in mapa_resultados]
+
+        else:
+            # 5. FLUJO TRADICIONAL (Si el usuario no está buscando por texto)
+            campos_validos = {
+                "id": Tecnica.idtecnica,
+                "nombre": Tecnica.nombre,
+                "fecha": Tecnica.fecha
+            }
+            campo_db = campos_validos.get(ordenar_por, Tecnica.fecha)
+            criterio_orden = desc(campo_db) if sentido == "desc" else asc(campo_db)
+            
+            resultados = query.options(
+                joinedload(Tecnica.disciplinas),
+                joinedload(Tecnica.etiquetas)
+            ).order_by(criterio_orden).offset(skip).limit(limit).all()
+
+        # Log de éxito (ahora protegido dentro del bloque de ejecución correcta)
+        logger.info(f"ID_USUARIO [{usuario.idusuario}] - Listado de técnicas obtenido exitosamente. Total filtrados: {total_filtrados}. Resultados devueltos: {len(resultados)}")
+
+        return {
+            "total": total_filtrados,
+            "resultados": resultados
         }
-        campo_db = campos_validos.get(ordenar_por, Tecnica.fecha)
-        criterio_orden = desc(campo_db) if sentido == "desc" else asc(campo_db)
-        
-        resultados = query.options(
-            joinedload(Tecnica.disciplinas),
-            joinedload(Tecnica.etiquetas)
-        ).order_by(criterio_orden).offset(skip).limit(limit).all()
 
-    logger.info(f"Listado de técnicas obtenido exitosamente. Total filtrados: {total_filtrados}")
-
-    return {
-        "total": total_filtrados,
-        "resultados": resultados
-    }
+    except Exception as e:
+        # Registra la traza del error exacta con variables críticas en el fichero de logs antes de lanzar la excepción HTTP
+        logger.error(
+            f"ID_USUARIO [{usuario.idusuario}] - ERROR CRÍTICO al listar técnicas. "
+            f"Filtros aplicados en fallo: {query_params_str}. Detalle del error: {str(e)}", 
+            exc_info=True
+        )
+        raise HTTPException(
+            status_code=500, 
+            detail="Error interno en el servidor al procesar el listado de técnicas."
+        )
 
 # Obtener detalle de técnica (para la página de detalle, con sus vídeos, disciplinas y etiquetas)
 
@@ -235,13 +259,13 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
         ).filter(Tecnica.idtecnica == idtecnica).first()
         
         if not tecnica:
-            logger.warning(f"Intento de acceso a técnica no encontrada con id {idtecnica} por usuario ID_USUARIO[{usuario.idusuario}]")
+            logger.warning(f"ID_USUARIO{usuario.idusuario} Intento de acceso a técnica no encontrada con id {idtecnica}")
             raise HTTPException(status_code=404, detail="Técnica no encontrada")
         
-        logger.info(f"Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido por usuario ID_USUARIO[{usuario.idusuario}]")
+        logger.info(f"ID_USUARIO{usuario.idusuario} Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido exitosamente")
         return tecnica
     except Exception as e:
-        logger.error(f"Error al obtener detalle de técnica {idtecnica} para usuario ID_USUARIO[{usuario.idusuario}]: {e}")
+        logger.error(f"ID_USUARIO{usuario.idusuario} Error al obtener detalle de técnica {idtecnica}: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")
 
 
