@@ -128,7 +128,7 @@ def listar_tecnicas(
         f"q={q}&fecha={fecha}&disciplina_id={disciplina_id}&etiqueta_id={etiqueta_id}"
         f"&ordenar_por={ordenar_por}&sentido={sentido}&skip={skip}&limit={limit}"
     )
-    logger.info(f"ID_USUARIO [{usuario.idusuario}] - Petición entrante: GET /api/tecnicas/?{query_params_str}")
+    logger.debug(f"ID_USUARIO[{usuario.idusuario}] - Petición entrante: GET /api/tecnicas/?{query_params_str}")
 
     try:
         # 1. Base de la consulta para el filtrado dinámico
@@ -141,7 +141,7 @@ def listar_tecnicas(
             
             if not q_sanitizada:
                 q = None
-                logger.warning(f"ID_USUARIO [{usuario.idusuario}] - El término de búsqueda 'q' quedó vacío tras la sanitización.")
+                logger.warning(f"ID_USUARIO[{usuario.idusuario}] - El término de búsqueda 'q' quedó vacío tras la sanitización.")
         
         # 2. Aplicamos los filtros estándar
         if q:
@@ -205,7 +205,7 @@ def listar_tecnicas(
             pagina_ids = [item["id"] for item in lista_para_ordenar[skip : skip + limit]]
             
             if not pagina_ids:
-                logger.info(f"ID_USUARIO [{usuario.idusuario}] - Búsqueda finalizada sin resultados para la página.")
+                logger.info(f"ID_USUARIO[{usuario.idusuario}] - Búsqueda finalizada sin resultados para la página.")
                 return {"total": total_filtrados, "resultados": []}
             
             # PASO E: Query final recuperando objetos completos
@@ -229,14 +229,14 @@ def listar_tecnicas(
                 joinedload(Tecnica.etiquetas)
             ).order_by(criterio_orden).offset(skip).limit(limit).all()
 
-        logger.info(f"ID_USUARIO [{usuario.idusuario}] - ÉXITO: {total_filtrados} filtrados, {len(resultados)} devueltos.")
+        logger.info(f"ID_USUARIO[{usuario.idusuario}] - ÉXITO: {total_filtrados} filtrados, {len(resultados)} devueltos.")
 
         return {"total": total_filtrados, "resultados": resultados}
 
     except Exception as e:
         logger.error(
-            f"ID_USUARIO [{usuario.idusuario}] - ERROR CRÍTICO. "
-            f"Filtros: {query_params_str}. Error: {str(e)}", 
+            f"ID_USUARIO[{usuario.idusuario}] - ERROR CRÍTICO. "
+            f"Filtros al buscar técnicas: {query_params_str}. Error: {str(e)}", 
             exc_info=True
         )
         raise HTTPException(status_code=500, detail="Error al procesar el listado de técnicas.")
@@ -254,13 +254,13 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
         ).filter(Tecnica.idtecnica == idtecnica).first()
         
         if not tecnica:
-            logger.warning(f"ID_USUARIO{usuario.idusuario} Intento de acceso a técnica no encontrada con id {idtecnica}")
+            logger.warning(f"ID_USUARIO[{usuario.idusuario}] Intento de acceso a técnica no encontrada con id {idtecnica}")
             raise HTTPException(status_code=404, detail="Técnica no encontrada")
         
-        logger.info(f"ID_USUARIO{usuario.idusuario} Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido exitosamente")
+        logger.info(f"ID_USUARIO[{usuario.idusuario}] Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido exitosamente")
         return tecnica
     except Exception as e:
-        logger.error(f"ID_USUARIO{usuario.idusuario} Error al obtener detalle de técnica {idtecnica}: {e}")
+        logger.error(f"ID_USUARIO[{usuario.idusuario}] Error al obtener detalle de técnica {idtecnica}: {e}")
         raise HTTPException(status_code=500, detail="Error al obtener detalle de técnica")
 
 
