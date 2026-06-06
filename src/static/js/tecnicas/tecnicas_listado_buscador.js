@@ -108,9 +108,10 @@
 
         filtrosActuales = params.toString();
         cargarTecnicas(filtrosActuales);
+        window.history.pushState({}, '', `${window.location.pathname}?${filtrosActuales}`);
     };
 
-    // 5. Función cargarTecnicas con paginación y gestión de resultados
+    // 5. Función cargarTecnicas con paginación y gestión de resultados (Corregida para capturar filtros externos e internos)
     async function cargarTecnicas(parametros = "", esCargaMas = false) {
         const grid = document.getElementById('grid-tecnicas');
         const statusFiltros = document.getElementById('status-filtros');
@@ -123,17 +124,45 @@
         }
 
         try {
-            // 2. Construir la URL con paginación
+            // 2. Construir la URL con paginación y hacer la petición a la API
             const url = `/api/tecnicas/?${parametros}&skip=${skip}&limit=${limit}`;
             const response = await fetch(url);
-            
-            // Importante: Aquí recibimos el objeto PaginaTecnicas
             const data = await response.json(); 
 
-            // 3. Actualizar el contador con data.total
+            // 3. Gestión y visualización del mensaje de filtros activos
             if (parametros || data.total > 0) {
                 statusFiltros.classList.remove('hidden');
-                textoFiltro.innerText = `Se han encontrado ${data.total} técnicas en total.`;
+                
+                let mensaje = `Se han encontrado ${data.total} técnicas en total.`;
+                
+                // Analizamos los parámetros activos (ya vengan de la URL del navegador o del argumento)
+                const queryActiva = parametros || window.location.search.replace('?', '');
+                const urlParams = new URLSearchParams(queryActiva);
+                
+                // Evaluamos si es un filtro único/simple (procedente de un click rápido o redirección)
+                // Comprobamos que solo tenga una clave de filtro de ID y que no haya texto 'q' conviviendo
+                const llavesFiltro = Array.from(urlParams.keys());
+                const esFiltroSimple = llavesFiltro.length === 1 && (llavesFiltro.includes('etiqueta_id') || llavesFiltro.includes('disciplina_id'));
+
+                if (esFiltroSimple) {
+                    const tipoFiltro = llavesFiltro[0]; // 'etiqueta_id' o 'disciplina_id'
+                    const idBuscado = parseInt(urlParams.get(tipoFiltro));
+
+                    // Intentamos buscar el texto del filtro en los checkboxes cargados en el buscador
+                    const inputCheckbox = document.querySelector(`input[name="${tipoFiltro}"][value="${idBuscado}"]`);
+                    
+                    if (inputCheckbox) {
+                        // Si el checkbox ya se ha renderizado en el buscador, le robamos el texto a su contenedor <label>
+                        const nombreFiltro = inputCheckbox.closest('label').innerText.replace('#', '').trim();
+                        mensaje = `Se han encontrado ${data.total} técnicas con el filtro: <strong class="inline-block text-blue-600 dark:text-blue-400 text-[11px] font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 ml-1 font-sans">#${nombreFiltro}</strong>`;
+                    } else {
+                        // Si los auxiliares aún no se han pintado en el DOM (carga inicial muy rápida), ponemos un texto genérico elegante
+                        const etiquetaOdisciplina = tipoFiltro === 'etiqueta_id' ? 'la etiqueta' : 'la disciplina';
+                        mensaje = `Se han encontrado ${data.total} técnicas filtradas por ${etiquetaOdisciplina} (ID: ${idBuscado}).`;
+                    }
+                }
+                
+                textoFiltro.innerHTML = mensaje;
             } else {
                 statusFiltros.classList.add('hidden');
             }
@@ -306,6 +335,9 @@
 
 		// 6. (Opcional) Si quieres que el buscador se cierre al limpiar
 		// toggleBuscador();
+
+        // 7. Esto limpia la ?query de la URL por completo
+        window.history.pushState({}, '', window.location.pathname); 
 	}
 
 	// 10 .Funciones para botones admin
