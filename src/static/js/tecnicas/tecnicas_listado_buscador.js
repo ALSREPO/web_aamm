@@ -154,7 +154,7 @@
                     if (inputCheckbox) {
                         // Si el checkbox ya se ha renderizado en el buscador, le robamos el texto a su contenedor <label>
                         const nombreFiltro = inputCheckbox.closest('label').innerText.replace('#', '').trim();
-                        mensaje = `Se han encontrado ${data.total} técnicas con el filtro: <strong class="inline-block text-blue-600 dark:text-blue-400 text-[11px] font-bold bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded border border-blue-100 dark:border-blue-800 ml-1 font-sans">#${nombreFiltro}</strong>`;
+                        mensaje = `Se han encontrado ${data.total} técnicas con el filtro: ${nombreFiltro}`;
                     } else {
                         // Si los auxiliares aún no se han pintado en el DOM (carga inicial muy rápida), ponemos un texto genérico elegante
                         const etiquetaOdisciplina = tipoFiltro === 'etiqueta_id' ? 'la etiqueta' : 'la disciplina';
