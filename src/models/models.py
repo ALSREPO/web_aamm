@@ -45,6 +45,7 @@ class Etiqueta(Base):
     __tablename__ = "ta_etiquetas"
     idetiqueta = Column(Integer, primary_key=True, autoincrement=True)
     etiqueta = Column(String(255), nullable=False)
+    orden = Column(Integer, nullable=False, default=999999)
 
 class Video(Base):
     __tablename__ = "ta_tecnicas_videos"
