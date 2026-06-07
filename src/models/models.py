@@ -63,7 +63,7 @@ class Tecnica(Base):
 
     # Relaciones
     videos = relationship("Video", backref="tecnica", cascade="all, delete-orphan")
-    etiquetas = relationship("Etiqueta", secondary=tecnicas_etiquetas, backref="tecnicas")
+    etiquetas = relationship("Etiqueta", secondary=tecnicas_etiquetas, backref="tecnicas", order_by="Etiqueta.orden")
     disciplinas = relationship("Disciplina", secondary=tecnicas_disciplinas, backref="tecnicas")
 
     # COLUMNA CALCULADA: Conteo de vídeos
