@@ -31,7 +31,7 @@ def obtener_disciplinas(db: Session = Depends(get_read_db)):
 
 @router.get("/etiquetas", response_model=list[EtiquetaBase], dependencies=[Depends(usuario_obligatorio)])
 def obtener_etiquetas(db: Session = Depends(get_read_db)):
-    return db.query(Etiqueta).all()
+    return db.query(Etiqueta).order_by(Etiqueta.orden).all()
 
 
 # Crear disciplinas y etiquetas

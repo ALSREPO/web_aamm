@@ -8,14 +8,11 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 # 2. Ahora sí, importamos de forma segura
 from src.config import LOG_LEVEL
+from src.utils.logging_config import configurar_logs
 from src.utils.db_tools import engine_write
 
-# 3. Configuramos el logger para este script
-logging.basicConfig(
-    level=getattr(logging, LOG_LEVEL, logging.INFO),
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S"
-)
+# 3. Inicializamos tu sistema central de logs (Consola + Fichero + Filtro IP)
+configurar_logs(LOG_LEVEL)
 logger = logging.getLogger("DB-INIT")
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "scripts")
