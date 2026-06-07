@@ -46,7 +46,66 @@ function renderizarLines(listaDeLineas) {
     contador.innerText = `${listaDeLineas.length} líneas mostradas`;
 }
 
-// 2. Modifica tu función cargarLogs para que sea la que asigne el nombre del archivo al arrancar
+// Analiza en caliente los logs y rellena los selects de IP y Usuarios
+function extraerFiltrosDinamicos() {
+    const selectIp = document.getElementById("filtro-ip");
+    const selectEmail = document.getElementById("filtro-email");
+
+    if (!selectIp || !selectEmail) return;
+
+    // Guardamos la selección actual
+    const ipSeleccionada = selectIp.value;
+    const emailSeleccionado = selectEmail.value;
+
+    const ipsEncontradas = new Set();
+    const identidadesEncontradas = new Set();
+
+    todasLasLineas.forEach(linea => {
+        if (!linea) return;
+
+        // 1. Extraer IP estándar
+        const matchIp = linea.match(/\[(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})\]/);
+        if (matchIp) ipsEncontradas.add(matchIp[1]);
+
+        // 2. Extraer Identidades
+        const matchUsuario = linea.match(/ID_USUARIO\[(.*?)\]/);
+        const matchAdmin = linea.match(/ID_ADMIN\[(.*?)\]/);
+        const matchSistema = linea.match(/\[sistema\]/);
+
+        if (matchUsuario) identidadesEncontradas.add(`ID_USUARIO[${matchUsuario[1]}]`);
+        else if (matchAdmin) identidadesEncontradas.add(`ID_ADMIN[${matchAdmin[1]}]`);
+        else if (matchSistema) identidadesEncontradas.add("[sistema]");
+    });
+
+    // Rellenar Select de IPs (Limpiamos el emoji interno de la opción por defecto)
+    selectIp.innerHTML = '<option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Todas las IPs</option>';
+    Array.from(ipsEncontradas).sort().forEach(ip => {
+        const option = ModelOption(ip, ip, ip === ipSeleccionada);
+        selectIp.add(option);
+    });
+
+    // Rellenar Select de Identidades/Emails (Limpiamos el emoji interno)
+    selectEmail.innerHTML = '<option value="" class="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200">Todos los usuarios</option>';
+    Array.from(identidadesEncontradas).sort().forEach(id => {
+        const option = ModelOption(id, id, id === emailSeleccionado);
+        selectEmail.add(option);
+    });
+}
+
+// Helper modificado: Ahora añade las clases de Tailwind para soportar el fondo oscuro al desplegar
+function ModelOption(texto, valor, seleccionado) {
+    const opt = document.createElement('option');
+    opt.text = texto;
+    opt.value = valor;
+    opt.selected = seleccionado;
+    
+    // Forzamos los estilos de fondo y color para corregir el despliegue en modo noche
+    opt.classList.add("bg-white", "dark:bg-slate-900", "text-slate-800", "dark:text-slate-200");
+    
+    return opt;
+}
+
+// 2. Descarga los logs del servidor y los guarda en la variable global "todasLasLineas"
 async function cargarLogs() {
     const contenedor = document.getElementById("contenedor-logs");
     const contador = document.getElementById("contador-lineas");
@@ -67,7 +126,9 @@ async function cargarLogs() {
         const datos = await respuesta.json();
         todasLasLineas = datos.logs;
         
-        document.getElementById("buscador-logs").value = "";
+        // Extraemos las nuevas IPs y emails que hayan entrado en este bloque
+        extraerFiltrosDinamicos();
+        //document.getElementById("buscador-logs").value = "";
         procesarYFiltrarLogs();
 
     } catch (error) {
@@ -107,7 +168,10 @@ async function cargarLogs() {
 
     // Centraliza el filtrado combinando el Buscador + Botones LED
     function procesarYFiltrarLogs() {
-        const termino = document.getElementById("buscador-logs").value.toLowerCase().trim();
+        const terminoInclusion = document.getElementById("buscador-logs").value.toLowerCase().trim();
+        const terminoExclusion = document.getElementById("excluidor-logs").value.toLowerCase().trim();
+        const ipSeleccionada = document.getElementById("filtro-ip").value;
+        const emailSeleccionado = document.getElementById("filtro-email").value;
         
         // 1. Filtrar primero por los niveles de los botones LED activos
         let lineasFiltradas = todasLasLineas.filter(linea => {
@@ -118,35 +182,52 @@ async function cargarLogs() {
             return filtrosActivos.info;
         });
 
-        // 2. Si además hay texto en el buscador, filtramos sobre lo anterior
-        if (termino) {
-            lineasFiltradas = lineasFiltradas.filter(linea => 
-                linea.toLowerCase().includes(termino)
-            );
+        // FILTRO 2: Filtrado por IP específica (si hay una seleccionada)
+    if (ipSeleccionada) {
+        lineasFiltradas = lineasFiltradas.filter(linea => linea.includes(`[${ipSeleccionada}]`));
+    }
+
+    // FILTRO 3: Filtrado por Email/Identidad específica
+    if (emailSeleccionado) {
+        lineasFiltradas = lineasFiltradas.filter(linea => linea.includes(emailSeleccionado));
+    }
+
+    // FILTRO 4: Buscador de inclusión tradicional
+    if (terminoInclusion) {
+        lineasFiltradas = lineasFiltradas.filter(linea => 
+            linea.toLowerCase().includes(terminoInclusion)
+        );
+    }
+
+    // FILTRO 5 (NUEVO): Buscador INVERSO de exclusión (Oculta si coincide el texto)
+    if (terminoExclusion) {
+        lineasFiltradas = lineasFiltradas.filter(linea => 
+            !linea.toLowerCase().includes(terminoExclusion)
+        );
+    }
+
+    // Renderizar resultado final filtrado en pantalla
+    renderizarLines(lineasFiltradas);
+}
+
+// Ejecución automática en tiempo real
+function filtrarLogs() {
+    procesarYFiltrarLogs();
+}
+
+document.addEventListener("DOMContentLoaded", cargarLogs);
+
+function reestablecerTodo() {
+    document.getElementById("buscador-logs").value = "";
+    document.getElementById("excluidor-logs").value = "";
+    document.getElementById("filtro-ip").value = "";
+    document.getElementById("filtro-email").value = "";
+    
+    for (const nivel in filtrosActivos) {
+        if (!filtrosActivos[nivel]) {
+            alternarFiltro(nivel);
         }
-
-        // 3. Mandamos la lista final resultante a pintar en la pantalla
-        renderizarLines(lineasFiltradas);
     }
-
-    // Esta función se ejecuta en tiempo real cada vez que se escribe en el input
-    function filtrarLogs() {
-        procesarYFiltrarLogs();
-    }
-
-    document.addEventListener("DOMContentLoaded", cargarLogs);
-
-    function reestablecerTodo() {
-        // 1. Vaciar el buscador
-        document.getElementById("buscador-logs").value = "";
-        
-        // 2. Encender todos los filtros LED si estaban apagados
-        for (const nivel in filtrosActivos) {
-            if (!filtrosActivos[nivel]) {
-                alternarFiltro(nivel); // Esto invierte el estado y actualiza el diseño visual
-            }
-        }
-        
-        // 3. Si ya estaban todos encendidos, simplemente refrescamos la vista
-        procesarYFiltrarLogs();
-    }
+    
+    procesarYFiltrarLogs();
+}
