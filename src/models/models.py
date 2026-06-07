@@ -45,6 +45,7 @@ class Etiqueta(Base):
     __tablename__ = "ta_etiquetas"
     idetiqueta = Column(Integer, primary_key=True, autoincrement=True)
     etiqueta = Column(String(255), nullable=False)
+    orden = Column(Integer, nullable=False, default=999999)
 
 class Video(Base):
     __tablename__ = "ta_tecnicas_videos"
@@ -62,7 +63,7 @@ class Tecnica(Base):
 
     # Relaciones
     videos = relationship("Video", backref="tecnica", cascade="all, delete-orphan")
-    etiquetas = relationship("Etiqueta", secondary=tecnicas_etiquetas, backref="tecnicas")
+    etiquetas = relationship("Etiqueta", secondary=tecnicas_etiquetas, backref="tecnicas", order_by="Etiqueta.orden")
     disciplinas = relationship("Disciplina", secondary=tecnicas_disciplinas, backref="tecnicas")
 
     # COLUMNA CALCULADA: Conteo de vídeos

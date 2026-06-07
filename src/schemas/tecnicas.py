@@ -11,6 +11,8 @@ class DisciplinaBase(BaseModel):
 class EtiquetaBase(BaseModel):
     etiqueta: str
     idetiqueta: int
+    orden: int
+    
     class Config:
         from_attributes = True
 
