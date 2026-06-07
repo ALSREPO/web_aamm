@@ -22,8 +22,24 @@
         </div>
     </div>
 
-    <!-- Sección de Instrucciones para Usuarios -->
+    <!-- Qué es y qué no es esta aplicación -->
     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 shadow-sm mb-8">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            🎯 Qué esperar y qué no es
+        </h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+            Esta aplicación <strong>no tiene, ni he querido darle, la estructura de un curso</strong>. En el que te presenta la lección 1, cuando la completas pasas a la lección 2... y así hasta que en un par de meses lo has visto todo y te convalidan la <i>faixa preta</i>.
+        </p>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4 leading-relaxed">
+            Es una <strong>recopilación de los vídeos que vamos haciendo en clase</strong>. Una forma sencilla de clasificarlos y hacerlos accesibles, por antiguos que sean. Y que no queden "perdidos" en un grupo infinito de WhatsApp.
+        </p>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-0 leading-relaxed">
+            Al entrar, aparecen las técnicas en orden cronológico: primero las más recientes y, según vas bajando, las más antiguas. Además tiene un buscador para poder filtrar cosas concretas.
+        </p>
+    </div>
+
+    <!-- Sección de Instrucciones para Usuarios -->
+    <div class="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/60 rounded-2xl p-6 md:p-8 mb-8">
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
             📖 ¿Cómo utilizar la plataforma?
         </h2>
@@ -65,35 +81,6 @@
         </div>
     </div>
 
-    <!-- Sección de Información para Desarrolladores -->
-    <div class="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/60 rounded-2xl p-6 md:p-8 mb-8">
-        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-            💻 Información para Desarrolladores
-        </h2>
-        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
-            Este sitio web ha sido construido bajo una arquitectura moderna, desacoplando la interfaz de usuario de la persistencia de datos mediante una API RESTful asíncrona.
-        </p>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700 dark:text-slate-300">
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2">🚀 Tecnologías Core</h3>
-                <ul class="space-y-1.5 list-disc list-inside">
-                    <li><strong>Backend:</strong> FastAPI (Python 3.10) de alta velocidad.</li>
-                    <li><strong>Base de Datos:</strong> Modelado relacional SQL mapeado mediante SQLAlchemy ORM.</li>
-                    <li><strong>Frontend:</strong> Estructura fluida con Jinja2 Templates, JavaScript Vanilla y Tailwind CSS.</li>
-                </ul>
-            </div>
-            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-                <h3 class="font-bold text-slate-900 dark:text-white mb-2">🛡️ Mecanismos de Seguridad</h3>
-                <ul class="space-y-1.5 list-disc list-inside">
-                    <li>Contraseñas encriptadas mediante algoritmos Hash robustos (bcrypt).</li>
-                    <li>Sesiones blindadas con Tokens JWT firmados en Cookies <code class="bg-slate-100 dark:bg-slate-900 px-1 rounded">HttpOnly</code>.</li>
-                    <li>Sistema de verificación de identidad por correo y panel de aprobación de roles.</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-
     <!-- Sección de Transparencia y Privacidad de Datos -->
     <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 shadow-sm mb-8">
         <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
@@ -127,8 +114,37 @@
         </div>
     </div>
 
+    <!-- Sección de Información para Desarrolladores -->
+    <div class="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/60 rounded-2xl p-6 md:p-8 mb-8">
+        <h2 class="text-2xl font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+            💻 Información para Desarrolladores
+        </h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-6 leading-relaxed">
+            Este sitio web ha sido construido bajo una arquitectura moderna, desacoplando la interfaz de usuario de la persistencia de datos mediante una API RESTful asíncrona.
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs text-slate-700 dark:text-slate-300">
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2">🚀 Tecnologías Core</h3>
+                <ul class="space-y-1.5 list-disc list-inside">
+                    <li><strong>Backend:</strong> FastAPI (Python 3.10) de alta velocidad.</li>
+                    <li><strong>Base de Datos:</strong> Modelado relacional SQL mapeado mediante SQLAlchemy ORM.</li>
+                    <li><strong>Frontend:</strong> Estructura fluida con Jinja2 Templates, JavaScript Vanilla y Tailwind CSS.</li>
+                </ul>
+            </div>
+            <div class="bg-white dark:bg-slate-800 p-4 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                <h3 class="font-bold text-slate-900 dark:text-white mb-2">🛡️ Mecanismos de Seguridad</h3>
+                <ul class="space-y-1.5 list-disc list-inside">
+                    <li>Contraseñas encriptadas mediante algoritmos Hash robustos (bcrypt).</li>
+                    <li>Sesiones blindadas con Tokens JWT firmados en Cookies <code class="bg-slate-100 dark:bg-slate-900 px-1 rounded">HttpOnly</code>.</li>
+                    <li>Sistema de verificación de identidad por correo y panel de aprobación de roles.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
     <!-- Sección de Código Fuente - Github -->
-    <div class="bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/60 rounded-2xl p-6 md:p-8 text-center shadow-lg">
+    <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 md:p-8 shadow-sm text-center shadow-lg">
         <h2 class="text-xl md:text-2xl font-bold mb-2 text-slate-800 dark:text-white">
             🚀 Código Fuente
         </h2>
