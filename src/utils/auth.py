@@ -12,6 +12,7 @@ from src.utils.db_tools import get_read_db
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 
 # Configuración de Passlib para usar SHA-512
 # 'crypt_dist' asegura que usemos implementaciones seguras
@@ -106,7 +107,7 @@ def enviar_correo_verificacion(email_destino: str, token: str):
 
     # 2. Creación del mensaje estructurado
     mensaje = MIMEMultipart("alternative")
-    mensaje["From"] = emisor
+    mensaje["From"] = formataddr(("Web AAMM", emisor))
     mensaje["To"] = email_destino
     mensaje["Subject"] = "Verifica tu cuenta en la web AAMM"
 
@@ -199,7 +200,7 @@ def enviar_correo_cambio_estado(email_destino: str, estado: int):
 
     # 3. Creación del mensaje estructurado
     mensaje = MIMEMultipart("alternative")
-    mensaje["From"] = emisor
+    mensaje["From"] = formataddr(("Web AAMM", emisor))
     mensaje["To"] = email_destino
     mensaje["Subject"] = info["asunto"]
 
