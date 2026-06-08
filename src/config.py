@@ -56,3 +56,7 @@ TELEGRAM_BOT_API_KEY = os.getenv("TELEGRAM_BOT_API_KEY")
 
 # 7. Configuración para mostrar/ocultar el horario
 MOSTRAR_HORARIO = int(os.getenv("MOSTRAR_HORARIO"))
+
+# 8. Configuración para notificaciones push (VAPID keys)
+VAPID_PUBLIC_KEY = os.getenv("VAPID_PUBLIC_KEY")
+VAPID_PRIVATE_KEY = os.getenv("VAPID_PRIVATE_KEY")
