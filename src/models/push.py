@@ -5,8 +5,8 @@ from src.models.models import Base  # O la ruta exacta donde importes tu declara
 class SuscripcionPush(Base):
     __tablename__ = "suscripciones_push"
 
-    id = Column(Integer, primary_key=True, autoincremental=True)
-    idusuario = Column(Integer, ForeignKey("usuarios.id", ondelete="CASCADE"), nullable=False)
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    idusuario = Column(Integer, ForeignKey("ta_usuarios.idusuario", ondelete="CASCADE"), nullable=False)
     endpoint = Column(Text, nullable=False)
     p256dh = Column(String(255), nullable=False)
     auth = Column(String(255), nullable=False)

@@ -3,6 +3,13 @@
 {% block title %}Perfil {{ user.nombre }} {% endblock %}
 
 {% block content %}
+<!-- Botón para activar notificaciones push  SOLO PARA PRUEBAS
+<div class="mt-4">
+    <button id="btn-notificaciones" class="btn btn-primary">
+        🔔 Activar Notificaciones en este dispositivo
+    </button>
+</div>
+ -->
 <div class="max-w-2xl mx-auto px-4 py-12">
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700">
         <div class="flex items-center gap-4 mb-8">
@@ -69,5 +76,6 @@
 </div>
 
 <script src="/static/js/usuarios/perfil.js" defer></script>
+<!-- <script src="/static/js/push-client.js" defer></script> -->
 
 {% endblock %}
