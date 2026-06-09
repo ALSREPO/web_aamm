@@ -98,3 +98,33 @@ def actualizar_preferencia_usuario(
         db.rollback()
         logger.error(f"Error al guardar la preferencia en MySQL: {e}")
         raise HTTPException(status_code=500, detail="No se pudo procesar la solicitud.")
+
+
+
+# prueba de notificaciones push (simulación de evento) - para desarrollo, no es un endpoint real de producción
+"""
+from fastapi import BackgroundTasks 
+
+@router.post("/simular-video")
+def simular_subida_de_video(
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_write_db),
+    current_user = Depends(usuario_obligatorio) # Solo profes o tú logueado
+):
+    #Simula que un profesor sube un vídeo. Dispara el despachador para 
+    #notificar a todos los alumnos que tengan el check activo.
+    
+    from src.services.notificaciones import despachar_notificacion_evento
+
+    # Llamamos al despachador
+    despachar_notificacion_evento(
+        db=db,
+        background_tasks=background_tasks,
+        nombre_evento="nuevo_video",
+        titulo="🥋 ¡Nueva lección disponible!",
+        cuerpo="Se ha subido el videotutorial: 'Defensa personal y fluidez de cadera'.",
+        ruta_destino="/videos/leccion-1"
+    )
+
+    return {"status": "ok", "message": "Simulación lanzada en segundo plano."}
+"""
