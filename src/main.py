@@ -89,6 +89,9 @@ app.include_router(horarios.router)
 from src.routers import push
 app.include_router(push.router)
 
+from src.routers import notificaciones
+app.include_router(notificaciones.router)
+
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)
 async def custom_404_handler(request: Request, __):
