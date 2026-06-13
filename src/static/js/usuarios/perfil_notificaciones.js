@@ -69,7 +69,7 @@ function actualizarEstadoBotonPush() {
         btn.disabled = false; // Permitimos clic para instruir con la nota
     } 
     else {
-        txt.innerText = "Activa los permisos para recibir alertas inmediatas en este equipo.";
+        txt.innerText = "Activa los permisos para recibir alertas en este equipo.";
         btn.innerHTML = "🔔 Activar";
         btn.className = "w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-sm";
         btn.disabled = false;
@@ -126,9 +126,11 @@ function cargarPreferenciasUsuario() {
                                ${pref.canal_push ? 'checked' : ''}>
                     </td>
                     <td class="py-4 px-4 text-center">
-                        <span class="inline-flex items-center rounded-md bg-slate-50 dark:bg-slate-900 px-2 py-1 text-[10px] font-black uppercase text-slate-400 dark:text-slate-600 border border-slate-100 dark:border-slate-800/60 select-none">
-                            Próximamente
-                        </span>
+                        <input type="checkbox" 
+                               class="check-preferencia h-4 w-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500 bg-slate-50 dark:bg-slate-900" 
+                               data-evento="${pref.nombre_clave}" 
+                               data-canal="email" 
+                               ${pref.canal_email ? 'checked' : ''}>
                     </td>
                 `;
                 tbody.appendChild(fila);
