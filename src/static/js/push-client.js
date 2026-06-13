@@ -10,8 +10,8 @@ function urlBase64ToUint8Array(base64String) {
     return outputArray;
 }
 
-// Reemplaza esto con tu clave pública del .env
-const VAPID_PUBLIC_KEY = "BBXsv2DG7tWyXLykOR4FqwbqDHQzkFoAmQqjXH03ZJnXXi6MlbjOgsNN_ks1DmGJRrOZbKMmcMkPnYZMjNGxJ8M"; 
+// Variables globales leyendo el "puente" del HTML
+const VAPID_PUBLIC_KEY = window.VAPID_PUBLIC_KEY;
 
 async function inicializarNotificacionesPush() {
     // 1. Verificar si el navegador es compatible

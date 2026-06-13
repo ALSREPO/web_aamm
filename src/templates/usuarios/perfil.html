@@ -98,6 +98,11 @@
     </div>
 </div>
 
+<script>
+    // Creamos variables globales en la ventana (window) para que el JS externo las lea
+    window.VAPID_PUBLIC_KEY = '{{ VAPID_PUBLIC_KEY }}';
+</script>
+
 <script src="/static/js/usuarios/perfil.js" defer></script>
 <script src="/static/js/usuarios/perfil_notificaciones.js" defer></script>
 <script src="/static/js/push-client.js" defer></script> 
