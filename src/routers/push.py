@@ -91,7 +91,8 @@ def enviar_push_prueba(
             suscripcion_db=sub,
             titulo="🥋 Escuela AAMM",
             cuerpo="¡Funciona! Tu servidor FastAPI te acaba de enviar un push en tiempo real.",
-            ruta_destino="/perfil"
+            ruta_destino="/perfil",
+            db=db
         )
         
         if exito:

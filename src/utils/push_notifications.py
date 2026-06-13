@@ -7,6 +7,7 @@ from pywebpush import webpush, WebPushException
 from py_vapid import Vapid
 from cryptography.hazmat.primitives.asymmetric import ec
 from src.config import VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, EMAIL_EMISOR as VAPID_ADMIN_EMAIL
+from sqlalchemy.orm import Session
 
 # Workaround para pywebpush con cryptography >= 41.
 # pywebpush llama a `ec.generate_private_key(ec.SECP256R1, ...)`,
@@ -23,10 +24,11 @@ if hasattr(pywebpush, "ec") and hasattr(pywebpush.ec, "generate_private_key"):
 
 logger = logging.getLogger("aamm")
 
-def enviar_notificacion_push(suscripcion_db, titulo: str, cuerpo: str, ruta_destino: str = None) -> bool:
+
+def enviar_notificacion_push(suscripcion_db, titulo: str, cuerpo: str, ruta_destino: str = None, db: Session = None) -> bool:
     """
     Toma una suscripción de la base de datos, cifra el mensaje y lo envía
-    al servidor push del navegador.
+    al servidor push del navegador. Si el token expiró (410 Gone), lo borra automáticamente.
     """
     # 1. Inicializamos las variables arriba para evitar problemas de scope 🌟
     endpoint = None
@@ -94,10 +96,25 @@ def enviar_notificacion_push(suscripcion_db, titulo: str, cuerpo: str, ruta_dest
         return True
 
     except WebPushException as ex:
-        if ex.response and ex.response.status_code in [410, 404]:
-            logger.warning(f"El token de suscripción ya no es válido (Código {ex.response.status_code}).")
+        # 🌟 MODIFICACIÓN AQUÍ: Captura y limpieza silenciosa del 410/404 Gone
+        status_code = ex.response.status_code if ex.response else None
+        
+        if status_code in [410, 404] or "Gone" in ex.message:
+            id_usuario = getattr(suscripcion_db, 'idusuario', 'Desconocido')
+            logger.warning(f"[Push] El token ya no es válido (Código {status_code}). Limpiando dispositivo obsoleto del usuario ID: {id_usuario}")
+            
+            # Si tenemos la sesión de base de datos activa y es un objeto de SQLAlchemy, lo borramos 🧹
+            if db and hasattr(suscripcion_db, '_sa_instance_state'):
+                try:
+                    db.delete(suscripcion_db)
+                    db.commit()
+                    logger.info(f"[Push] Registro eliminado correctamente de MySQL.")
+                except Exception as db_err:
+                    db.rollback()
+                    logger.error(f"[Push] Error al intentar borrar el token de MySQL: {db_err}")
             return False
 
+        # Si es otro error de WebPush diferente a un token revocado, sí dejamos el log de error
         logger.error(f"Error en el servidor Push externo (WebPushException): {ex}\n{traceback.format_exc()}")
         return False
 

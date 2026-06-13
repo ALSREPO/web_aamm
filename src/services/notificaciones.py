@@ -55,7 +55,8 @@ def despachar_notificacion_evento(
                 suscripcion_db=sub,
                 titulo=titulo,
                 cuerpo=cuerpo,
-                ruta_destino=ruta_destino
+                ruta_destino=ruta_destino,
+                db=db
             )
             enviados += 1
 
