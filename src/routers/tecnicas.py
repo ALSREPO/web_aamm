@@ -314,10 +314,10 @@ def crear_tecnica(
             despachar_notificacion_evento(
                 db=db,
                 background_tasks=background_tasks,
-                nombre_evento="nuevo_video", # Mantenemos tu clave de evento
-                titulo="🥋 ¡Nueva lección disponible!",
-                cuerpo=f"Se ha subido la nueva técnica: '{nueva_tecnica.nombre}'.",
-                ruta_destino=f"/tecnicas/{nueva_tecnica.idtecnica}" # 🚀 Apunta dinámicamente al ID recién creado
+                nombre_evento="nueva_tecnica", # Mantenemos tu clave de evento
+                titulo="¡Nueva lección disponible!",
+                cuerpo=f"Se ha subido la técnica: '{nueva_tecnica.nombre}'.",
+                ruta_destino=f"/tecnica/{nueva_tecnica.idtecnica}" # 🚀 Apunta dinámicamente al ID recién creado
             )
             logger.info(f"Notificación en cola de BackgroundTasks para la técnica {nueva_tecnica.idtecnica}")
         except Exception as push_err:

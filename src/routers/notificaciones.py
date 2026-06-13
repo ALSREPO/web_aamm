@@ -9,7 +9,7 @@ from src.models.notificaciones import NotificacionTipo, UsuarioNotificacionConfi
 from src.schemas.notificaciones import PreferenciaNotificacionSchema, ActualizarPreferenciaSchema
 from src.config import ENTORNO
 
-logger = logging.getLogger("aamm")
+logger = logging.getLogger("AAMM-NOTIFICACIONES")
 
 router = APIRouter(
     prefix="/api/notificaciones",
@@ -122,7 +122,7 @@ if ENTORNO in ["develop"]:
         despachar_notificacion_evento(
             db=db,
             background_tasks=background_tasks,
-            nombre_evento="nuevo_video",
+            nombre_evento="nueva_tecnica",
             titulo="🥋 ¡Nueva lección disponible!",
             cuerpo="Se ha subido el videotutorial: 'Defensa personal y fluidez de cadera'.",
             ruta_destino="/videos/leccion-1"

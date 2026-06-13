@@ -6,9 +6,11 @@ from fastapi import BackgroundTasks
 
 from src.models.notificaciones import NotificacionTipo, UsuarioNotificacionConfig
 from src.models.push import SuscripcionPush
+from src.models.models import Usuario  # Asegúrate de importar tu modelo base de usuarios
 from src.utils.push_notifications import enviar_notificacion_push
+from src.utils.email_notifications import enviar_correo_notificacion_evento 
 
-logger = logging.getLogger("aamm")
+logger = logging.getLogger("AAMM-NOTIFICACIONES")
 
 def despachar_notificacion_evento(
     db: Session, 
@@ -19,8 +21,9 @@ def despachar_notificacion_evento(
     ruta_destino: str = None
 ):
     """
-    Despachador universal. Busca usuarios suscritos al 'nombre_evento'
-    y encola el envío Web Push en las tareas de segundo plano de FastAPI.
+    Despachador universal. 
+    Busca usuarios y distribuye de forma asíncrona tanto por Web Push como por Email (vía Brevo)
+    respetando de forma estricta las preferencias del alumno en la base de datos.
     """
     try:
         # 1. Buscamos el evento en el catálogo para obtener su idtipo
@@ -29,27 +32,23 @@ def despachar_notificacion_evento(
             logger.error(f"[Despachador] El evento '{nombre_evento}' no existe en el catálogo.")
             return
 
-        # 2. Buscamos qué usuarios NO quieren recibir este push (tienen canal_push = False)
-        # Recordamos: Por defecto todo el mundo está suscrito (True), así que buscamos los "opt-out"
-        usuarios_bloqueados = db.query(UsuarioNotificacionConfig.idusuario).filter(
+        # ==========================================
+        # CANAL A: GESTIÓN DE WEB PUSH (Opt-out)
+        # ==========================================
+        # Por defecto es True, buscamos quién lo ha desactivado explícitamente
+        usuarios_bloqueados_push = db.query(UsuarioNotificacionConfig.idusuario).filter(
             UsuarioNotificacionConfig.idtipo == evento.idtipo,
             UsuarioNotificacionConfig.canal_push == False
         ).all()
-        
-        # Convertimos a un set de Python para buscar a velocidad luz O(1)
-        set_bloqueados = {u.idusuario for u in usuarios_bloqueados}
+        set_bloqueados_push = {u.idusuario for u in usuarios_bloqueados_push}
 
-        # 3. Traemos todas las suscripciones de navegadores activas en la escuela
         todas_las_suscripciones = db.query(SuscripcionPush).all()
+        push_enviados = 0
 
-        enviados = 0
         for sub in todas_las_suscripciones:
-            # Si el dueño del dispositivo ha desactivado este tipo de notificación, lo saltamos 🛑
-            if sub.idusuario in set_bloqueados:
+            if sub.idusuario in set_bloqueados_push:
                 continue
 
-            # 4. Encolamos el envío real en segundo plano 🚀
-            # Esto evita que el endpoint actual tarde segundos de más en responder al usuario
             background_tasks.add_task(
                 enviar_notificacion_push,
                 suscripcion_db=sub,
@@ -58,9 +57,41 @@ def despachar_notificacion_evento(
                 ruta_destino=ruta_destino,
                 db=db
             )
-            enviados += 1
+            push_enviados += 1
 
-        logger.info(f"[Despachador] Encoladas {enviados} notificaciones push para el evento '{nombre_evento}'.")
+        # ==========================================
+        # CANAL B: GESTIÓN DE EMAILS (Opt-in)
+        # ==========================================
+        # Por defecto es False, buscamos quién lo ha activado explícitamente
+        usuarios_activos_email = db.query(UsuarioNotificacionConfig.idusuario).filter(
+            UsuarioNotificacionConfig.idtipo == evento.idtipo,
+            UsuarioNotificacionConfig.canal_email == True
+        ).all()
+        lista_ids_email = [u.idusuario for u in usuarios_activos_email]
 
+        email_enviados = 0
+        if lista_ids_email:
+            # Traemos los correos electrónicos correspondientes de la tabla Usuario
+            alumnos_a_notificar = db.query(Usuario).filter(
+                Usuario.idusuario.in_(lista_ids_email),
+                Usuario.activo >= 1 # Seguridad básica: solo alumnos activos
+            ).all()
+
+            for alumno in alumnos_a_notificar:
+                if alumno.email:
+                    background_tasks.add_task(
+                        enviar_correo_notificacion_evento,
+                        email_destino=alumno.email,
+                        titulo=titulo,
+                        cuerpo=cuerpo,
+                        ruta_destino=ruta_destino
+                    )
+                    email_enviados += 1
+
+        logger.info(
+            f"[Despachador] Procesado evento '{nombre_evento}'. "
+            f"Encolados: {push_enviados} Web Push y {email_enviados} Correos electrónicos."
+        )
+        
     except Exception as e:
         logger.error(f"[Despachador] Error crítico distribuyendo el evento {nombre_evento}: {e}")
