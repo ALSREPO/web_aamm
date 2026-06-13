@@ -7,6 +7,7 @@ from src.utils.db_tools import get_write_db
 from src.utils.auth import usuario_obligatorio  # Tu autenticación por cookies
 from src.models.notificaciones import NotificacionTipo, UsuarioNotificacionConfig
 from src.schemas.notificaciones import PreferenciaNotificacionSchema, ActualizarPreferenciaSchema
+from src.config import ENTORNO
 
 logger = logging.getLogger("aamm")
 
@@ -101,30 +102,30 @@ def actualizar_preferencia_usuario(
 
 
 
-# prueba de notificaciones push (simulación de evento) - para desarrollo, no es un endpoint real de producción
-"""
-from fastapi import BackgroundTasks 
+if ENTORNO in ["develop"]:
+    # prueba de notificaciones push (simulación de evento) - para desarrollo, no es un endpoint real de producción
 
-@router.post("/simular-video")
-def simular_subida_de_video(
-    background_tasks: BackgroundTasks,
-    db: Session = Depends(get_write_db),
-    current_user = Depends(usuario_obligatorio) # Solo profes o tú logueado
-):
-    #Simula que un profesor sube un vídeo. Dispara el despachador para 
-    #notificar a todos los alumnos que tengan el check activo.
-    
-    from src.services.notificaciones import despachar_notificacion_evento
+    from fastapi import BackgroundTasks 
 
-    # Llamamos al despachador
-    despachar_notificacion_evento(
-        db=db,
-        background_tasks=background_tasks,
-        nombre_evento="nuevo_video",
-        titulo="🥋 ¡Nueva lección disponible!",
-        cuerpo="Se ha subido el videotutorial: 'Defensa personal y fluidez de cadera'.",
-        ruta_destino="/videos/leccion-1"
-    )
+    @router.post("/simular-video")
+    def simular_subida_de_video(
+        background_tasks: BackgroundTasks,
+        db: Session = Depends(get_write_db),
+        current_user = Depends(usuario_obligatorio) # Solo profes o tú logueado
+    ):
+        #Simula que un profesor sube un vídeo. Dispara el despachador para 
+        #notificar a todos los alumnos que tengan el check activo.
+        
+        from src.services.notificaciones import despachar_notificacion_evento
 
-    return {"status": "ok", "message": "Simulación lanzada en segundo plano."}
-"""
+        # Llamamos al despachador
+        despachar_notificacion_evento(
+            db=db,
+            background_tasks=background_tasks,
+            nombre_evento="nuevo_video",
+            titulo="🥋 ¡Nueva lección disponible!",
+            cuerpo="Se ha subido el videotutorial: 'Defensa personal y fluidez de cadera'.",
+            ruta_destino="/videos/leccion-1"
+        )
+
+        return {"status": "ok", "message": "Simulación lanzada en segundo plano."}

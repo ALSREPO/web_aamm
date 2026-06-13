@@ -7,6 +7,7 @@ from src.utils.auth import usuario_obligatorio  # Ajusta esta ruta a tu sistema 
 from src.models.push import SuscripcionPush
 from src.schemas.push import SuscripcionPushSchema
 from src.utils.push_notifications import enviar_notificacion_push
+from src.config import ENTORNO
 
 logger = logging.getLogger("aamm")
 
@@ -67,44 +68,44 @@ def guardar_suscripcion(
         logger.error(f"Error al guardar la suscripción push en MySQL: {e}")
         raise HTTPException(status_code=500, detail="No se pudo guardar la suscripción")
 
-
-@router.post("/send-test")
-def enviar_push_prueba(
-    db: Session = Depends(get_write_db),
-    current_user = Depends(usuario_obligatorio)
-):
-    """
-    Ruta temporal de desarrollo para mandarte un push de prueba a todos tus 
-    dispositivos registrados.
-    """
-    # Buscamos todas las suscripciones del usuario que hace la petición
-    suscripciones = db.query(SuscripcionPush).filter(SuscripcionPush.idusuario == current_user.idusuario).all()
-    
-    if not suscripciones:
-        raise HTTPException(status_code=404, detail="No tienes ningún dispositivo registrado en este navegador.")
-
-    enviadas_con_exito = 0
-    
-    for sub in suscripciones:
-        # Llamamos a nuestra utilidad de envío
-        exito = enviar_notificacion_push(
-            suscripcion_db=sub,
-            titulo="🥋 Escuela AAMM",
-            cuerpo="¡Funciona! Tu servidor FastAPI te acaba de enviar un push en tiempo real.",
-            ruta_destino="/perfil",
-            db=db
-        )
+if ENTORNO in ["develop"]:
+    @router.post("/send-test")
+    def enviar_push_prueba(
+        db: Session = Depends(get_write_db),
+        current_user = Depends(usuario_obligatorio)
+    ):
+        """
+        Ruta temporal de desarrollo para mandarte un push de prueba a todos tus 
+        dispositivos registrados.
+        """
+        # Buscamos todas las suscripciones del usuario que hace la petición
+        suscripciones = db.query(SuscripcionPush).filter(SuscripcionPush.idusuario == current_user.idusuario).all()
         
-        if exito:
-            enviadas_con_exito += 1
-        else:
-            # Si devolvió False es porque el token caducó (Error 410 Gone). Limpiamos la BBDD.
-            db.delete(sub)
-            db.commit()
-            logger.info(f"Limpiando suscripción obsoleta ID {sub.id} del usuario {current_user.idusuario}")
+        if not suscripciones:
+            raise HTTPException(status_code=404, detail="No tienes ningún dispositivo registrado en este navegador.")
 
-    return {
-        "status": "ok", 
-        "enviadas": enviadas_con_exito, 
-        "limpiadas": len(suscripciones) - enviadas_con_exito
-    }
+        enviadas_con_exito = 0
+        
+        for sub in suscripciones:
+            # Llamamos a nuestra utilidad de envío
+            exito = enviar_notificacion_push(
+                suscripcion_db=sub,
+                titulo="🥋 Escuela AAMM",
+                cuerpo="¡Funciona! Tu servidor FastAPI te acaba de enviar un push en tiempo real.",
+                ruta_destino="/perfil",
+                db=db
+            )
+            
+            if exito:
+                enviadas_con_exito += 1
+            else:
+                # Si devolvió False es porque el token caducó (Error 410 Gone). Limpiamos la BBDD.
+                db.delete(sub)
+                db.commit()
+                logger.info(f"Limpiando suscripción obsoleta ID {sub.id} del usuario {current_user.idusuario}")
+
+        return {
+            "status": "ok", 
+            "enviadas": enviadas_con_exito, 
+            "limpiadas": len(suscripciones) - enviadas_con_exito
+        }

@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 
 load_dotenv(override=False)
 
+ENTORNO = os.environ.get("ENTORNO")
+
 # 1. Configuración de la conexión a la base de datos (Dinámica)
 db_config = {
     "host": os.environ.get("DB_HOST", "localhost"),
