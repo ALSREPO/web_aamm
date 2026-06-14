@@ -1,5 +1,7 @@
 # Datos sensibles
 .env
+.env.staging
+.env.main
 
 # Basura de Python
 __pycache__/
