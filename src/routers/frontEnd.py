@@ -10,7 +10,7 @@ from typing import Optional
 from src.models.models import Usuario
 from src.models.horarios import HorarioClase # Importa tu nuevo modelo
 from sqlalchemy import asc
-from src.config import NUMERO_TECNICAS_POR_PAGINA, LOG_FILE_PATH, MOSTRAR_HORARIO
+from src.config import NUMERO_TECNICAS_POR_PAGINA, LOG_FILE_PATH, MOSTRAR_HORARIO, VAPID_PUBLIC_KEY
 
 router = APIRouter(prefix="", tags=["FrontEnd"])
 
@@ -76,7 +76,7 @@ async def logout():
 async def pagina_perfil(request: Request, user: Usuario = Depends(obtener_usuario_actual)):
     if not user or user.activo < 1:
         return RedirectResponse(url="/login", status_code=303)
-    return templates.TemplateResponse("usuarios/perfil.html", {"request": request, "user": user, "MOSTRAR_HORARIO" : MOSTRAR_HORARIO,})
+    return templates.TemplateResponse("usuarios/perfil.html", {"request": request, "user": user, "MOSTRAR_HORARIO" : MOSTRAR_HORARIO, "VAPID_PUBLIC_KEY": VAPID_PUBLIC_KEY,})
 
 
 @router.get("/admin/gestion-usuarios", response_class=HTMLResponse)

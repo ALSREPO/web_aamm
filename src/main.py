@@ -1,6 +1,6 @@
 import logging
 from fastapi import FastAPI, Depends, Request, status
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.staticfiles import StaticFiles
 
@@ -21,6 +21,11 @@ app = FastAPI(title="AAMM - Artes Marciales")
 ###########################################################
 # Configuramos el manejo de archivos estáticos (CSS, JS y vídeos)
 app.mount("/static", StaticFiles(directory="src/static"), name="static")
+
+
+@app.get('/sw.js')
+def service_worker():
+    return FileResponse('src/sw.js', media_type='application/javascript')
 
 
 ###########################################################
@@ -80,6 +85,12 @@ app.include_router(logs.router)
 
 from src.routers import horarios
 app.include_router(horarios.router)
+
+from src.routers import push
+app.include_router(push.router)
+
+from src.routers import notificaciones
+app.include_router(notificaciones.router)
 
 # Si entra en una ruta no definida, redirige a la raíz
 @app.exception_handler(status.HTTP_404_NOT_FOUND)

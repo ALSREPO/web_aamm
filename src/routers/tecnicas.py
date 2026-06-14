@@ -1,6 +1,6 @@
 import logging
 
-from fastapi import APIRouter, Depends, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException, status, BackgroundTasks
 from sqlalchemy import func, text, desc, asc
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
@@ -12,7 +12,7 @@ from src.schemas.tecnicas import DisciplinaBase, EtiquetaBase, PaginaTecnicas, T
 from src.utils.db_tools import get_read_db, get_write_db
 from src.utils.auth import verificar_admin, usuario_obligatorio
 from src.config import ORDEN_LISTADO_TECNICAS, SENTIDO_ORDEN_LISTADO_TECNICAS, NUMERO_TECNICAS_POR_PAGINA
-
+from src.services.notificaciones import despachar_notificacion_evento
 
 router = APIRouter(prefix="/api/tecnicas", tags=["Técnicas"])
 
@@ -267,8 +267,12 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
 # Crear nueva técnica (solo para admins, con disciplinas, etiquetas y vídeos asociados)
 
 @router.post("/", response_model=TecnicaRead, dependencies=[Depends(verificar_admin)])
-def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), admin: Usuario = Depends(usuario_obligatorio)):
-
+def crear_tecnica(
+    obj_in: TecnicaCreate, 
+    background_tasks: BackgroundTasks, 
+    db: Session = Depends(get_write_db), 
+    admin: Usuario = Depends(usuario_obligatorio)
+):
     try: 
         # 1. Crear la instancia básica de la Técnica
         nueva_tecnica = Tecnica(
@@ -303,6 +307,24 @@ def crear_tecnica(obj_in: TecnicaCreate, db: Session = Depends(get_write_db), ad
         db.commit()
         db.refresh(nueva_tecnica)
         logger.info(f"Técnica creada {nueva_tecnica.idtecnica} - {nueva_tecnica.nombre}, por admin ID_ADMIN[{admin.idusuario}]")
+
+        # 7. LANZAR NOTIFICACIONES EN SEGUNDO PLANO 
+        # Lo hacemos después del commit para garantizar que la técnica ya existe en la BBDD.
+        try:
+            despachar_notificacion_evento(
+                db=db,
+                background_tasks=background_tasks,
+                nombre_evento="nueva_tecnica", # Mantenemos tu clave de evento
+                titulo="¡Nueva lección disponible!",
+                cuerpo=f"Se ha subido la técnica: '{nueva_tecnica.nombre}'.",
+                ruta_destino=f"/tecnica/{nueva_tecnica.idtecnica}" # 🚀 Apunta dinámicamente al ID recién creado
+            )
+            logger.info(f"Notificación en cola de BackgroundTasks para la técnica {nueva_tecnica.idtecnica}")
+        except Exception as push_err:
+            # Envolvemos esto en un try/except secundario para que, si por algún motivo
+            # falla el despachador de push, el endpoint no rompa y devuelva la técnica al admin con éxito.
+            logger.error(f"Error al encolar la notificación push para la técnica {nueva_tecnica.idtecnica}: {push_err}")
+        
         return nueva_tecnica
 
     except Exception as e:

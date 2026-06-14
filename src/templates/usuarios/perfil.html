@@ -5,6 +5,7 @@
 {% block content %}
 <div class="max-w-2xl mx-auto px-4 py-12">
     <div class="bg-white dark:bg-slate-800 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-700">
+        
         <div class="flex items-center gap-4 mb-8">
             <div class="h-16 w-16 bg-blue-600 rounded-2xl flex items-center justify-center text-white text-2xl font-bold uppercase">
                 {{ user.nombre[0] }}
@@ -17,44 +18,76 @@
 
         <hr class="border-slate-100 dark:border-slate-700 mb-8">
 
+        <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-2">Preferencia de Alertas</h2>
+        <p class="text-xs text-slate-400 dark:text-slate-500 mb-4 uppercase font-black tracking-wider">Gestión de avisos y canales</p>
+
+        <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 mb-6 border border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="flex-1">
+                <h3 class="text-sm font-bold text-slate-700 dark:text-slate-300">Notificaciones</h3>
+                <p id="txt-estado-dispositivo" class="text-xs text-slate-400 dark:text-slate-500 mt-0.5">Comprobando estado del dispositivo...</p>
+            </div>
+            <button id="btn-notificaciones" class="w-full sm:w-auto text-white font-bold text-xs py-2.5 px-4 rounded-xl transition-all shadow-sm flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700">
+                🔔 Activar
+            </button>
+        </div>
+
+        <div class="border border-slate-100 dark:border-slate-700/80 rounded-2xl mb-8 overflow-hidden">
+            <div class="w-full overflow-x-auto scrollbar-thin"> 
+                <table class="w-full text-left border-collapse min-w-[500px]"> 
+                    <thead>
+                        <tr class="bg-slate-50/70 dark:bg-slate-900/40 text-[10px] font-black uppercase tracking-wider text-slate-400 dark:text-slate-500 border-b border-slate-100 dark:border-slate-700/80">
+                            <th class="py-3 px-4">Tipo de Alerta</th>
+                            <th class="py-3 px-4 text-center w-24">Notificación</th>
+                            <th class="py-3 px-4 text-center w-24">Email</th>
+                        </tr>
+                    </thead>
+                    <tbody id="contenedor-preferencias" class="divide-y divide-slate-100 dark:divide-slate-700/80 text-sm">
+                        <tr>
+                            <td colspan="3" class="py-8 text-center text-xs text-slate-400 dark:text-slate-500 uppercase tracking-tight animate-pulse font-bold">
+                                Cargando tus ajustes...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <hr class="border-slate-100 dark:border-slate-700 my-8">
+
         <h2 class="text-lg font-bold text-slate-800 dark:text-white mb-4">Cambiar Contraseña</h2>
+        <form id="form-password" class="space-y-4">
+            <div>
+                <label class="block text-xs font-black text-slate-400 uppercase mb-2">Contraseña Actual</label>
+                <input type="password" id="pass_actual" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase mb-2">Nueva Contraseña</label>
+                    <input type="password" id="pass_nueva" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-black text-slate-400 uppercase mb-2">Repetir Nueva Contraseña</label>
+                    <input type="password" id="pass_repeticion" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+            </div>
 
-		<!-- Formulario para cambiar la contraseña -->
-		<form id="form-password" class="space-y-4">
-			<div>
-				<label class="block text-xs font-black text-slate-400 uppercase mb-2">Contraseña Actual</label>
-				<input type="password" id="pass_actual" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
-			</div>
-			
-			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-				<div>
-					<label class="block text-xs font-black text-slate-400 uppercase mb-2">Nueva Contraseña</label>
-					<input type="password" id="pass_nueva" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
-				</div>
-				<div>
-					<label class="block text-xs font-black text-slate-400 uppercase mb-2">Repetir Nueva Contraseña</label>
-					<input type="password" id="pass_repeticion" required class="w-full bg-slate-50 dark:bg-slate-900 border-0 rounded-xl px-4 py-3 focus:ring-2 focus:ring-blue-500 outline-none">
-				</div>
-			</div>
+            <div id="mensaje-error" class="hidden text-red-500 text-xs font-bold uppercase tracking-tight">
+                Las contraseñas nuevas no coinciden
+            </div>
 
-			<div id="mensaje-error" class="hidden text-red-500 text-xs font-bold uppercase tracking-tight">
-				Las contraseñas nuevas no coinciden
-			</div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-xl transition-colors shadow-sm text-sm">
+                Actualizar Contraseña
+            </button>
+        </form>
 
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-xl transition-colors">
-				Actualizar Contraseña
-			</button>
-		</form>
+        <hr class="border-slate-100 dark:border-slate-700 my-8">
 
-		<hr class="border-slate-100 dark:border-slate-700 my-8">
-
-		<!-- Zona de Peligro: eliminar cuenta de forma permanente -->
-		<div class="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/30 dark:bg-red-950/10 p-5">
+        <div class="rounded-2xl border border-red-200 dark:border-red-900/60 bg-red-50/30 dark:bg-red-950/10 p-5">
             <h3 class="text-sm font-bold text-red-600 dark:text-red-400 uppercase tracking-wider mb-2 text-center">Zona de Peligro</h3>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4">
+            <p class="text-xs text-slate-500 dark:text-slate-400 mb-4 text-center">
                 Una vez que elimines tu cuenta, no habrá marcha atrás. Se borrarán de manera permanente todos tus datos de acceso al servidor.
             </p>
-            <!-- Contenedor flex para centrar el botón -->
             <div class="flex justify-center mt-2">
                 <button id="btn-eliminar-cuenta" class="w-full sm:w-auto bg-red-600 hover:bg-red-700 text-white font-bold text-sm py-2.5 px-6 rounded-xl transition-colors">
                     Eliminar mi cuenta permanentemente
@@ -62,12 +95,15 @@
             </div>
         </div>
 
-
-
-
     </div>
 </div>
 
-<script src="/static/js/usuarios/perfil.js" defer></script>
+<script>
+    // Creamos variables globales en la ventana (window) para que el JS externo las lea
+    window.VAPID_PUBLIC_KEY = '{{ VAPID_PUBLIC_KEY }}';
+</script>
 
+<script src="/static/js/usuarios/perfil.js" defer></script>
+<script src="/static/js/usuarios/perfil_notificaciones.js" defer></script>
+<script src="/static/js/push-client.js" defer></script> 
 {% endblock %}
