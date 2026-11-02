@@ -1,0 +1,1 @@
+ALTER TABLE ta_usuarios ADD COLUMN (flag_seminario BOOL NOT NULL DEFAULT FALSE);

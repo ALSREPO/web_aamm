@@ -33,6 +33,7 @@ class Usuario(Base):
     tchatfirst_name = Column(String(100))
     tchatlast_name = Column(String(100))
     email_verificado = Column(Boolean, default=False)
+    flag_seminario = Column(Boolean, default=False)
 
     suscripciones_push = relationship("SuscripcionPush", back_populates="usuario", cascade="all, delete-orphan")
 

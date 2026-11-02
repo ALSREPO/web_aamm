@@ -1,7 +1,7 @@
 import logging
 
 from fastapi import APIRouter, Depends, Query, HTTPException, status, BackgroundTasks
-from sqlalchemy import func, text, desc, asc
+from sqlalchemy import func, text, desc, asc, not_, or_
 from sqlalchemy.orm import Session, joinedload
 from typing import List, Optional
 from datetime import date
@@ -30,8 +30,14 @@ def obtener_disciplinas(db: Session = Depends(get_read_db)):
     return db.query(Disciplina).all()
 
 @router.get("/etiquetas", response_model=list[EtiquetaBase], dependencies=[Depends(usuario_obligatorio)])
-def obtener_etiquetas(db: Session = Depends(get_read_db)):
-    return db.query(Etiqueta).order_by(Etiqueta.orden).all()
+def obtener_etiquetas(db: Session = Depends(get_read_db), usuario: Usuario = Depends(usuario_obligatorio)):
+    query = db.query(Etiqueta)
+
+    # Si el usuario NO es admin y NO tiene flag_seminario, ocultamos la etiqueta "Seminario"
+    if usuario.activo != 2 and not usuario.flag_seminario:
+        query = query.filter(func.lower(Etiqueta.etiqueta) != "seminario")
+
+    return query.order_by(Etiqueta.orden).all()
 
 
 # Crear disciplinas y etiquetas
@@ -161,6 +167,18 @@ def listar_tecnicas(
             for e_id in etiqueta_id:
                 query = query.filter(Tecnica.etiquetas.any(Etiqueta.idetiqueta == e_id))
         
+        # Si el usuario NO es admin y NO tiene flag_seminario, 
+        # ocultamos los seminarios tanto por etiqueta como si aparece en el título.
+        if usuario.activo != 2 and not usuario.flag_seminario:
+            query = query.filter(
+                not_(
+                    or_(
+                        Tecnica.etiquetas.any(func.lower(Etiqueta.etiqueta) == "seminario"),
+                        func.lower(Tecnica.nombre).contains("seminario")
+                    )
+                )
+            )
+        
         # 3. Total de filtrados
         total_filtrados = query.count()
         
@@ -257,6 +275,16 @@ def obtener_tecnica(idtecnica: int, db: Session = Depends(get_read_db), usuario:
             logger.warning(f"ID_USUARIO[{usuario.idusuario}] Intento de acceso a técnica no encontrada con id {idtecnica}")
             raise HTTPException(status_code=404, detail="Técnica no encontrada")
         
+        # ---> VALIDACIÓN DE SEMINARIO POR ETIQUETA O NOMBRE <---
+        es_seminario = any(e.etiqueta.strip().lower() == "seminario" for e in tecnica.etiquetas) or \
+                       "seminario" in tecnica.nombre.lower()
+        
+        if es_seminario:
+            if not usuario.flag_seminario and usuario.activo != 2:
+                logger.warning(f"ID_USUARIO[{usuario.idusuario}] Intento no autorizado a técnica de seminario {idtecnica}")
+                raise HTTPException(status_code=403, detail="Contenido exclusivo para asistentes al seminario.")
+        # -------------------------------------------------------
+
         logger.info(f"ID_USUARIO[{usuario.idusuario}] Detalle de técnica {idtecnica} - {tecnica.nombre} obtenido exitosamente")
         return tecnica
     except Exception as e:
